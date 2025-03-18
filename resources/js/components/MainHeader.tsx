@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { ListFilter, Plus } from 'lucide-react';
 
-const MainHeader = ({ title, variant, createHref }: any) => {
+const MainHeader = ({ title, variant, createHref, styleClass }: any) => {
     //variant : primary = both buttons; filter = only filter; create = only create;
     return (
-        <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-600 px-4 py-2 shadow-md">
+        <div className={`mb-4 flex items-center justify-between rounded-lg bg-gray-600 px-4 py-2 shadow-md ${styleClass}`}>
             <h1 className="text-2xl font-bold">{title}</h1>
             <div className="flex">
                 <button
