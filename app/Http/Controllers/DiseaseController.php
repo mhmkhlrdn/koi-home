@@ -11,7 +11,7 @@ class DiseaseController extends Controller
 {
     public function index () {
         $diseases = Disease::all();
-        $fishWithDisease = FishDisease::with(['fish', 'disease'])->get();
+        $fishWithDisease = FishDisease::with(['fish', 'disease'])->where('recovery_date', '=', null)->get();
         return Inertia::render('admin/diseases', [
             'diseases' => $diseases,
             'fishWithDisease' => $fishWithDisease,

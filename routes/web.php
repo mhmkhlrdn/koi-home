@@ -8,6 +8,7 @@ use App\Http\Controllers\FishController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SickController;
+use App\Http\Controllers\TreatmentController;
 use App\Models\Treatment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,7 @@ Route::put('/kh-admin/fishes/{id}', [FishController::class, 'update'])->name('fi
 Route::middleware('auth')->group(function () {
     Route::prefix('kh-admin')->group(function (){
         Route::get('/medicines', [MedicineController::class, 'index'])->name('medicine.index');
+        Route::get('/diseases/treatment', [TreatmentController::class, 'index'])->name('treatment.index');
         Route::get('/disease/create', [DiseaseController::class, 'create'])->name('disease.create');
         Route::get('/dashboard', [DashboardController::class, 'index']
         )->name('dashboard');

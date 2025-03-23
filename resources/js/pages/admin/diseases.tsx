@@ -62,7 +62,7 @@ const Diseases = () => {
             </main>
 
             {isModalOpen && (
-                <div className="bg-opacity-50 fixed inset-0 flex items-center justify-center bg-black">
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50">
                     <div className="w-full max-w-lg rounded-lg bg-gray-800 p-6">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-white">Fish Diagnosed with {selectedDisease?.name}</h2>

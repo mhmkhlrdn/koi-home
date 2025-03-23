@@ -10,13 +10,15 @@ use Inertia\Inertia;
 class MedicineController extends Controller
 {
     public function index() {
-        $medicinesInStock = Medicine::where('amount', '>', 0)->get();
+        // $medicinesInStock = Medicine::where('amount', '>', 0)->get();
+
+        $medicinesInStock = Medicine::with(['measurement'])->where('amount', '>', 0)->get();
         $medicinesOutOfStock = Medicine::where('amount', '=', 0)->get();
         $medicineType = MedicineType::with('medicine', 'type')->get();
         return Inertia::render('admin/medicines', [
             'medicinesInStock' => $medicinesInStock,
             'medicineOutOfStock' => $medicinesOutOfStock,
-            'medicineType' => $medicineType
+            'medicineType' => $medicineType,
         ]);
     }
 }
