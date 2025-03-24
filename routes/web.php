@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']
         )->name('dashboard');
         Route::get('/diagnosis/create', [DiagnosisController::class, 'create'])->name('diagnosis.create');
+        Route::post('/treatment/store', [TreatmentController::class, 'store'])->name('treatment.store');
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
         Route::prefix('fishes')->group(function (){
