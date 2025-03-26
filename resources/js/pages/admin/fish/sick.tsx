@@ -1,9 +1,7 @@
-//@ts-nocheck
-
 import Modal from '@/components/Modal';
 import PaginationNav from '@/components/PaginationNav';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataTable from '../../../components/DataTable';
@@ -142,9 +140,13 @@ const SickFishes = () => {
                                     .filter((t) => t.disease_id === selectedFish.disease_id)
                                     .map((at) => (
                                         <button
-                                            key={at.id}
+                                            onClick={() => {
+                                                router.post('/kh-admin/fishes/treatment', {
+                                                    Treatment: at.id,
+                                                    Fish: selectedFish.id,
+                                                });
+                                            }}
                                             className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
-                                            onClick={() => console.log('Selected Treatment:', at.id)}
                                         >
                                             {at.name}
                                         </button>

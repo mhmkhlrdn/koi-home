@@ -54,7 +54,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('fishes')->group(function (){
             Route::get('/sickfishes', [SickController::class, 'index'])->name('sick-fishes');
             Route::post('/sickfishes/recovery', [SickController::class, 'recovery'])->name('fish.recovery');
-
+            Route::post("/treatment", [TreatmentController::class, 'treat'])->name('treatment.treat');
+            Route::post("/treatment/treated", [TreatmentController::class, 'treated'])->name('treatment.treated');
             });
         Route::get('/pools', function(){
             return Inertia::render('admin/pools');

@@ -41,7 +41,7 @@ class DiagnosisController extends Controller
             'diagnosis_date' => 'required|date',
         ]);
 
-        FishDisease::create([
+        FishDisease::insert([
             'fish_id' => $request->fish_id,
             'disease_id' => $request->disease_id,
             'diagnosis_date' => $request->diagnosis_date,

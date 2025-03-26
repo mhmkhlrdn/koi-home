@@ -116,7 +116,7 @@ class MenusTableSeeder extends Seeder
                 'parent_id' => 8,
                 'title' => 'Menu',
                 'url' => '/menu',
-                'icon_tag' => null,
+                'icon_tag' => '',
                 'isEnabled' => 1,
             ],
             [
