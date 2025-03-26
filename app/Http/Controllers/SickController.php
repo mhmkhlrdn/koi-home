@@ -5,16 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Disease;
 use App\Models\Fish;
 use App\Models\FishDisease;
+use App\Models\Treatment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SickController extends Controller
 {
     public function index () {
-        $fishDiseases = Fish::withWhereHas('diseases')->get();
+        $fishDiseases = Fish::with('diseases')->get();
         $diseaseFishes = Disease::with(['fishes'])->get();
         $sickFishes = FishDisease::with(['fish', 'disease', 'user'])->paginate(10);
-        return Inertia::render('admin/fish/sick', ['sickFishes' => $sickFishes, 'fishDiseases' => $fishDiseases, 'diseaseFishes' => $diseaseFishes]);
+        $availableTreatment = Treatment::with(['medicine', 'disease'])->whereHas('medicine', function ($query) {
+            $query->where('amount', '>', 0);
+        })->get();
+        $unavailableTreatment = Treatment::with(['medicine', 'disease'])->whereHas('medicine', function ($query) {
+            $query->where('amount', '=', 0);
+        })->get();
+        return Inertia::render('admin/fish/sick', ['sickFishes' => $sickFishes, 'fishDiseases' => $fishDiseases, 'diseaseFishes' => $diseaseFishes, 'availableTreatment' => $availableTreatment, 'unavailableTreatment' => $unavailableTreatment]);
     }
     public function recovery(Request $request) {
         $request->validate([

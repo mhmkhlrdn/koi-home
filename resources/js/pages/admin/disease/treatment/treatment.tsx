@@ -1,26 +1,28 @@
 import PaginationNav from '@/components/PaginationNav';
 import AdminLayout from '@/layouts/AdminLayout';
+import { Disease, Medicine, PaginatedResponse, Treatment } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import DataTable from '../../../../components/DataTable';
 import MainHeader from '../../../../components/MainHeader';
 
+interface PageProps {
+    treatments: PaginatedResponse<Treatment>;
+    diseases: Disease[];
+    medicines: Medicine[];
+    [key: string]: any;
+}
+
 const treatment = () => {
-    const { treatments, diseases, medicines } = usePage().props;
+    const { treatments, diseases, medicines } = usePage<PageProps>().props;
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        disease_id: '',
-        medicine_id: '',
+        disease_id: 0,
+        medicine_id: 0,
         description: '',
     });
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log(data);
-        post(route('treatment.store'));
-    };
-    console.log(medicines);
-    console.log(diseases);
+
     const [modals, setModals] = useState({
         modalCreate: false,
         modalFilter: false,
@@ -28,11 +30,17 @@ const treatment = () => {
         modalDelete: false,
     });
 
-    const manageModal = (modalName) => {
+    const manageModal = (modalName: string) => {
         setModals((prev) => ({
             ...prev,
             [modalName]: !prev[modalName],
         }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('treatment.store'));
+        manageModal('modalCreate');
     };
     const columns = [
         { key: 'id', label: 'ID' },
@@ -74,7 +82,6 @@ const treatment = () => {
                                     <label className="text-md font-bold text-white">Treatment Name</label>
                                     <input
                                         type="text"
-                                        value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                         className="w-full rounded-lg bg-gray-800 p-2 text-white"
                                     />
@@ -82,8 +89,8 @@ const treatment = () => {
                                 <div>
                                     <label className="text-md font-bold text-white">Treatment for Disease</label>
                                     <select
-                                        value={data.disease_id}
-                                        onChange={(e) => setData('disease_id', e.target.value)}
+                                        // value={data.disease_id}
+                                        onChange={(e) => setData('disease_id', parseInt(e.target.value))}
                                         aria-placeholder="Treatment for Disease"
                                         className="w-full rounded-lg bg-gray-800 p-2 text-white"
                                         name="disease"
@@ -100,8 +107,7 @@ const treatment = () => {
                                 <div>
                                     <label className="text-md font-bold text-white">Medicine used in Treatment</label>
                                     <select
-                                        // value={data.medicine_id}
-                                        onChange={(e) => setData('medicine_id', e.target.value)}
+                                        onChange={(e) => setData('medicine_id', parseInt(e.target.value))}
                                         className="w-full rounded-lg bg-gray-800 p-2 text-white"
                                         name="disease"
                                         id="disease"
@@ -120,12 +126,11 @@ const treatment = () => {
                                     <input
                                         className="w-full rounded-lg bg-gray-800 p-2 text-white"
                                         type="text"
-                                        value={data.description}
                                         onChange={(e) => setData('description', e.target.value)}
                                     />
                                 </div>
                                 <button type="submit" disabled={processing} className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white">
-                                    Save
+                                    {processing ? 'Saving...' : 'Save'}
                                 </button>
                             </form>
                         </div>

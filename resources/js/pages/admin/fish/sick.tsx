@@ -2,7 +2,6 @@
 
 import Modal from '@/components/Modal';
 import PaginationNav from '@/components/PaginationNav';
-import ButtonLink from '@/components/ui/ButtonLink';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useForm, usePage } from '@inertiajs/react';
 import { Settings } from 'lucide-react';
@@ -11,7 +10,7 @@ import DataTable from '../../../components/DataTable';
 import MainHeader from '../../../components/MainHeader';
 
 const SickFishes = () => {
-    const { sickFishes, diseaseFishes, fishDiseases } = usePage().props;
+    const { sickFishes, diseaseFishes, fishDiseases, availableTreatment, unavailableTreatment } = usePage().props;
     const [selectedFish, setSelectedFish] = useState(null);
     const { data, setData, post } = useForm({
         fish_id: selectedFish?.id || '', // Send the selected fish ID
@@ -24,6 +23,9 @@ const SickFishes = () => {
         recoveryFish: { isOpen: false },
         applyTreatment: { isOpen: false },
     });
+
+    console.log(sickFishes);
+    console.log('selected fish', selectedFish);
 
     // Toggle any modal by name
     const handleModalState = (modalName, fish = null) => {
@@ -70,6 +72,7 @@ const SickFishes = () => {
         id: item.id,
         fish_code: item.fish ? item.fish.code : 'N/A',
         disease_name: item.disease ? item.disease.name : 'N/A',
+        disease_id: item.disease ? item.disease.id : 'N/A',
         diagnosis_date: item.diagnosis_date,
         recovery_date: item.recovery_date,
         diagnosed_by: item.user ? item.user.name : 'N/A',
@@ -129,9 +132,43 @@ const SickFishes = () => {
 
             {/* Treatment Modal */}
             <Modal isOpen={modalState.applyTreatment.isOpen} onClose={() => handleModalState('applyTreatment')} title="Apply Treatment">
-                <div className="flex gap-x-3 py-4">
-                    <ButtonLink classNames="flex-1" variant="primary" label="Confirm Treatment" href={``} />
-                </div>
+                {selectedFish ? (
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                        {/* Available Treatments */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-green-400">Available Treatments</h3>
+                            <div className="grid gap-2">
+                                {availableTreatment
+                                    .filter((t) => t.disease_id === selectedFish.disease_id)
+                                    .map((at) => (
+                                        <button
+                                            key={at.id}
+                                            className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
+                                            onClick={() => console.log('Selected Treatment:', at.id)}
+                                        >
+                                            {at.name}
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
+
+                        {/* Unavailable Treatments */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-red-400">Unavailable Treatments</h3>
+                            <div className="grid gap-2">
+                                {unavailableTreatment
+                                    .filter((t) => t.disease_id === selectedFish.disease_id)
+                                    .map((ut) => (
+                                        <div key={ut.id} className="w-full rounded-lg bg-gray-800 p-3 text-gray-400 opacity-50">
+                                            {ut.name} (Medicine Out of Stock)
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-center text-gray-400">Select a fish to view treatments.</p>
+                )}
             </Modal>
         </AdminLayout>
     );

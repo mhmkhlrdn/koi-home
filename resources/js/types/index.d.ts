@@ -5,6 +5,26 @@ export interface Auth {
     user: User;
 }
 
+export interface PaginatedResponse<T> {
+    data: T[];
+    links: {
+        first?: string;
+        last?: string;
+        prev?: string | null;
+        next?: string | null;
+    };
+    meta: {
+        current_page: number;
+        from: number | null;
+        last_page: number;
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+        path: string;
+        per_page: number;
+        to: number | null;
+        total: number;
+    };
+}
+
 export interface BreadcrumbItem {
     title: string;
     href: string;
@@ -38,5 +58,41 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
+}
+
+export interface Disease {
+    id: number;
+    name: string;
+    description: string;
+    [key: string]: unknown;
+}
+
+export interface Medicine {
+    id: number;
+    name: string;
+    amount: number;
+    measurement_id: number;
+    measurement?: Measurement;
+    instruction: string;
+    packaging: number;
+    image_url: string;
+    [key: string]: unknown;
+}
+
+export interface Measurement {
+    id: number;
+    name: string;
+    [key: string]: unknown;
+}
+
+export interface Treatment {
+    id: number;
+    name: string;
+    disease_id: number;
+    disease?: Disease;
+    medicine_id: number;
+    medicine?: Medicine;
+    description: string;
+    [key: string]: unknown;
 }

@@ -12,7 +12,7 @@ class TreatmentController extends Controller
 {
     public function store (Request $request){
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:diseases,name',
+            'name' => 'required|string|max:255|',
             'medicine_id' => 'required|int',
             'disease_id' => 'required|int',
             'description' => 'nullable|string',
@@ -29,9 +29,9 @@ class TreatmentController extends Controller
     }
 
     public function index () {
-        $diseases = Disease::all('name');
-        $medicines = Medicine::all('name');
-        $treatments = Treatment::with(['disease', 'medicine'])->paginate(10);
+        $diseases = Disease::all(['name', 'id']);
+        $medicines = Medicine::all(['name', 'id']);
+        $treatments = Treatment::with(['disease', 'medicine',])->paginate(10);
         return Inertia::render('admin/disease/treatment/treatment', ['treatments' => $treatments,
     'medicines' => $medicines, 'diseases' => $diseases]);
     }
