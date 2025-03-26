@@ -3,7 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { useForm, usePage } from '@inertiajs/react';
 
 const FishTreatment = () => {
-    const { TreatmentID, FishID, FishTreated, TreatmentUsed }: any = usePage().props;
+    const { FishTreated, TreatmentUsed }: any = usePage().props;
     const { data, setData, post, processing, errors } = useForm({
         fish_disease_id: FishTreated.id,
         treatment_id: TreatmentUsed.id,

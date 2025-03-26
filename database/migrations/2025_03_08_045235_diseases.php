@@ -62,8 +62,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('fish_disease_id')->constrained('fish_diseases')->cascadeOnDelete();
             $table->foreignId('treatment_id')->constrained('treatments');
-            $table->string('frequency')->nullable();
-            $table->string('dosage')->nullable();
+            $table->integer('frequency')->nullable();
+            $table->integer('dosage')->nullable();
             $table->string('method'); // for frontend add ['Topical', 'Injection', 'Oral', 'Bath', 'Other'] as combobox, if other, add an input field
             $table->foreignId('user_id')->constrained('users'); //who decided on the treatment
         });

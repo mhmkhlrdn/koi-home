@@ -8,7 +8,7 @@ import DataTable from '../../../components/DataTable';
 import MainHeader from '../../../components/MainHeader';
 
 const SickFishes = () => {
-    const { sickFishes, diseaseFishes, fishDiseases, availableTreatment, unavailableTreatment } = usePage().props;
+    const { sickFishes, treatedFishes, availableTreatment, unavailableTreatment } = usePage().props;
     const [selectedFish, setSelectedFish] = useState(null);
     const { data, setData, post } = useForm({
         fish_id: selectedFish?.id || '', // Send the selected fish ID
@@ -22,7 +22,7 @@ const SickFishes = () => {
         applyTreatment: { isOpen: false },
     });
 
-    console.log(sickFishes);
+    // console.log('treated fishes: ', treatedFishes);
     console.log('selected fish', selectedFish);
 
     // Toggle any modal by name
@@ -41,7 +41,7 @@ const SickFishes = () => {
     useEffect(() => {
         if (selectedFish) {
             setData('fish_id', selectedFish.id);
-            console.log(selectedFish);
+            // console.log(selectedFish);
         }
     }, [selectedFish]);
 
@@ -65,6 +65,11 @@ const SickFishes = () => {
             <Settings className="h-4 w-4" />
         </button>
     );
+    const renderTreatmentActions = (fish) => (
+        <button onClick={() => handleModalState('manageFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+            <Settings className="h-4 w-4" />
+        </button>
+    );
 
     const formattedData = sickFishes.data.map((item) => ({
         id: item.id,
@@ -84,6 +89,25 @@ const SickFishes = () => {
         { key: 'recovery_date', label: 'Recovery Date' },
         { key: 'diagnosed_by', label: 'Diagnosed By' },
     ];
+    const formattedTreatmentData = treatedFishes.data.map((item) => ({
+        id: item.id,
+        sickfish_code: item.fish_disease.fish.code ? item.fish_disease.fish.code : 'N/A',
+        treatment_name: item.treatment ? item.treatment.name : 'N/A',
+        dosage: item.dosage ? item.dosage + ' ' + item.treatment.medicine.measurement.name : 'N/A',
+        frequency: item.frequency,
+        method: item.method,
+        applied_by: item.user ? item.user.name : 'N/A',
+    }));
+
+    const treatmentColumns = [
+        { key: 'id', label: 'ID' },
+        { key: 'sickfish_code', label: 'Fish' },
+        { key: 'treatment_name', label: 'Treatment' },
+        { key: 'dosage', label: 'Dosage' },
+        { key: 'frequency', label: 'Frequency' },
+        { key: 'method', label: 'Method' },
+        { key: 'applied_by', label: 'Treatment Applied By' },
+    ];
 
     return (
         <AdminLayout>
@@ -91,6 +115,12 @@ const SickFishes = () => {
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Sick Fishes" variant="filter" />
                     <DataTable columns={columns} data={formattedData} actions={renderActions} />
+                    <PaginationNav links={sickFishes.links} />
+                </div>
+
+                <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <MainHeader title="Fishes Being Treated" variant="filter" />
+                    <DataTable columns={treatmentColumns} data={formattedTreatmentData} actions={renderTreatmentActions} />
                     <PaginationNav links={sickFishes.links} />
                 </div>
             </main>
