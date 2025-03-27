@@ -7,6 +7,7 @@ use App\Models\Fish;
 use App\Models\FishDisease;
 use App\Models\FishTreatment;
 use App\Models\Medicine;
+use App\Models\NextTreatmentSchedule;
 use App\Models\Treatment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,19 +78,22 @@ class TreatmentController extends Controller
         $validated = $request->validate([
             'fish_disease_id' => 'required|int|exists:fish_diseases,id',
             'treatment_id' => 'required|int|exists:treatments,id',
-            'frequency' => 'required|int',
+            'datetime' => 'required|string',
             'dosage' => 'required|int',
             'method' => 'nullable|string',
         ]);
 
-        FishTreatment::insert([
+        $treatmentId = FishTreatment::insertGetId([
             'fish_disease_id' => $validated['fish_disease_id'],
             'treatment_id' => $validated['treatment_id'],
-            'frequency' => $validated['frequency'],
             'dosage' => $validated['dosage'],
             'method' => $validated['method'],
             'user_id' => Auth::id(),
+        ]);
 
+        NextTreatmentSchedule::insert([
+            'datetime' => $validated['datetime'],
+            'fish_treatment_id' => $treatmentId,
         ]);
 
         return redirect()->route('sick-fishes')->with('success', 'Treatment applied succesfully');

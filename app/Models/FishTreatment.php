@@ -9,10 +9,13 @@ class FishTreatment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['fish_disease_id', 'treatment_id', 'frequency', 'dosage', 'method', 'user_id'];
+    protected $fillable = ['fish_disease_id', 'treatment_id', 'dosage', 'method', 'user_id'];
 
     public $timestamps = false;
 
+    public function schedule(){
+        return $this->hasOne(NextTreatmentSchedule::class);
+    }
     public function fishDisease()
     {
         return $this->belongsTo(FishDisease::class);

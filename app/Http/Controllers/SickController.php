@@ -6,6 +6,7 @@ use App\Models\Disease;
 use App\Models\Fish;
 use App\Models\FishDisease;
 use App\Models\FishTreatment;
+use App\Models\NextTreatmentSchedule;
 use App\Models\Treatment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,7 +24,7 @@ class SickController extends Controller
         ->paginate(10, ['*'], 'sickFishesPage')
         ->appends(['treatedFishesPage' => $treatedFishesPage]);
 
-    $treatedFishes = FishTreatment::with(['fishDisease.fish', 'treatment.medicine.measurement', 'user'])
+    $treatedFishes = FishTreatment::with(['fishDisease.fish', 'treatment.medicine.measurement', 'user', 'schedule'])
         ->paginate(10, ['*'], 'treatedFishesPage')
         ->appends(['sickFishesPage' => $sickFishesPage]);
 

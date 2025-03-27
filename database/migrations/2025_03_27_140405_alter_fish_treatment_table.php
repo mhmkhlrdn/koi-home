@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('treatment_frequency', function(Blueprint $table){
+        Schema::create('next_treatment_schedule', function(Blueprint $table){
             $table->id();
-            $table->integer('interval_in_hours');
-            $table->timestamps();
-
+            $table->datetime('datetime');
+            $table->foreignId('fish_treatment_id')->constrained('fish_treatments');
         });
 
-        Schema::table('fish_treatment', function (Blueprint $table){
+        Schema::table('fish_treatments', function (Blueprint $table){
 $table->dropColumn('frequency');
-$table->foreignId('frequency_id')->constrained('treatment_frequency')->nullable();
         });
     }
 

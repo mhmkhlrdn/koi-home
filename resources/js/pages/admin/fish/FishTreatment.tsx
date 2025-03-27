@@ -1,16 +1,30 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useForm, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 const FishTreatment = () => {
     const { FishTreated, TreatmentUsed }: any = usePage().props;
+
+    // Function to get current date and time in "YYYY-MM-DDTHH:MM" format
+    const getCurrentDateTime = () => {
+        const now = new Date();
+        return now.toISOString().slice(0, 16); // Removes seconds & milliseconds
+    };
+
     const { data, setData, post, processing, errors } = useForm({
         fish_disease_id: FishTreated.id,
         treatment_id: TreatmentUsed.id,
-        frequency: 0,
+        datetime: getCurrentDateTime(), // Set default value
         dosage: 0,
         method: '',
     });
+
+    // Ensure the datetime field is set to current time when the component loads
+    useEffect(() => {
+        setData('datetime', getCurrentDateTime());
+    }, []);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('treatment.treated'));
@@ -62,16 +76,18 @@ const FishTreatment = () => {
                                     placeholder="Enter dosage"
                                 />
                             </div>
-                            {/* Frequency Input */}
+
+                            {/* Date Time Input */}
                             <div>
-                                <label className="block text-gray-300">Frequency (per day)</label>
+                                <label className="block text-gray-300">Treatment Date and Time</label>
                                 <input
-                                    onChange={(e) => setData('frequency', parseInt(e.target.value))}
-                                    type="number"
+                                    onChange={(e) => setData('datetime', e.target.value)}
+                                    type="datetime-local"
+                                    value={data.datetime}
                                     className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 p-2 text-white focus:border-gray-500 focus:ring-0"
-                                    placeholder="Enter frequency"
                                 />
                             </div>
+
                             {/* Method Combo Box */}
                             <div>
                                 <label className="block text-gray-300">Method</label>

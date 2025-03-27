@@ -7,27 +7,74 @@ import { useEffect, useState } from 'react';
 import DataTable from '../../../components/DataTable';
 import MainHeader from '../../../components/MainHeader';
 
+type Fish = {
+    id: string;
+    code?: string;
+    disease_id?: string;
+};
+
+type ModalState = {
+    manageFish: { isOpen: boolean; selectedFish: Fish | null };
+    treatedFish: { isOpen: boolean; selectedFish: Fish | null };
+    recoveryFish: { isOpen: boolean };
+    applyTreatment: { isOpen: boolean };
+};
+
 const SickFishes = () => {
     const { sickFishes, treatedFishes, availableTreatment, unavailableTreatment } = usePage().props;
-    const [selectedFish, setSelectedFish] = useState(null);
+    const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
     const { data, setData, post } = useForm({
-        fish_id: selectedFish?.id || '', // Send the selected fish ID
+        fish_id: selectedFish?.id || '',
         recoveryDate: '',
     });
 
-    // Object to manage multiple modals dynamically
-    const [modalState, setModalState] = useState({
+    const [modalState, setModalState] = useState<ModalState>({
         manageFish: { isOpen: false, selectedFish: null },
         treatedFish: { isOpen: false, selectedFish: null },
         recoveryFish: { isOpen: false },
         applyTreatment: { isOpen: false },
     });
 
-    // console.log('treated fishes: ', treatedFishes);
-    console.log('selected fish', selectedFish);
+    const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
 
-    // Toggle any modal by name
-    const handleModalState = (modalName, fish = null) => {
+    // Calculate time left for each treated fish
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const updatedTimeLeft: Record<string, string> = {};
+
+            treatedFishes.data.forEach((item) => {
+                if (!item.schedule?.datetime) {
+                    updatedTimeLeft[item.id] = 'N/A';
+                    return;
+                }
+
+                const appointmentTime = new Date(item.schedule.datetime);
+                const currentTime = new Date();
+                const diffMs = appointmentTime - currentTime;
+
+                if (diffMs <= 0) {
+                    updatedTimeLeft[item.id] = "Time's up";
+                } else {
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    updatedTimeLeft[item.id] = `${hours}h ${minutes}m`;
+                }
+            });
+
+            setTimeLeftMap(updatedTimeLeft);
+        };
+
+        const interval = setInterval(calculateTimeLeft, 1000);
+        return () => clearInterval(interval);
+    }, [treatedFishes]);
+
+    useEffect(() => {
+        if (selectedFish) {
+            setData('fish_id', selectedFish.id);
+        }
+    }, [selectedFish]);
+
+    const toggleModal = (modalName: keyof ModalState, fish: Fish | null = null) => {
         if (fish) setSelectedFish(fish);
 
         setModalState((prev) => ({
@@ -39,67 +86,57 @@ const SickFishes = () => {
         }));
     };
 
-    useEffect(() => {
-        if (selectedFish) {
-            setData('fish_id', selectedFish.id);
-            // console.log(selectedFish);
-        }
-    }, [selectedFish]);
-
     const closeAllModals = () => {
-        modalState.applyTreatment.isOpen = false;
-        modalState.recoveryFish.isOpen = false;
-        modalState.manageFish.isOpen = false;
+        Object.keys(modalState).forEach((key) => {
+            modalState[key as keyof ModalState].isOpen = false;
+        });
     };
 
-    const handleRecoveryForm = (e) => {
+    const handleRecoveryForm = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('fish.recovery'), {
-            onSuccess: () => {
-                closeAllModals();
-            },
+            onSuccess: () => closeAllModals(),
         });
     };
 
-    const renderActions = (fish) => (
-        <button onClick={() => handleModalState('manageFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
-            <Settings className="h-4 w-4" />
-        </button>
-    );
-    const renderTreatmentActions = (fish) => (
-        <button onClick={() => handleModalState('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+    const renderFishActions = (fish: Fish) => (
+        <button onClick={() => toggleModal('manageFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
             <Settings className="h-4 w-4" />
         </button>
     );
 
-    const handleTreatedOnce = () => {
-        console.log('handle treated once, frequency', parseInt(selectedFish.frequency));
-        if (parseInt(selectedFish.frequency) > 0) {
-            router.post('/kh-admin/fishes/treatment/update', {
-                fish_id: selectedFish.id,
-                frequency: parseInt(selectedFish.frequency) - 1,
-            });
-        }
+    const renderTreatmentActions = (fish: Fish) => (
+        <button onClick={() => toggleModal('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+            <Settings className="h-4 w-4" />
+        </button>
+    );
+
+    const formatSickFishData = () => {
+        return sickFishes.data.map((item) => ({
+            id: item.id,
+            fish_code: item.fish?.code || 'N/A',
+            disease_name: item.disease?.name || 'N/A',
+            disease_id: item.disease?.id || 'N/A',
+            diagnosis_date: item.diagnosis_date,
+            recovery_date: item.recovery_date,
+            diagnosed_by: item.user?.name || 'N/A',
+        }));
     };
 
-    const handleDailyTreatmentCompleted = () => {
-        router.post('/kh-admin/fishes/treatment/update', {
-            fish_id: selectedFish.id,
-            frequency: 0,
-        });
+    const formatTreatedFishData = () => {
+        return treatedFishes.data.map((item) => ({
+            id: item.id,
+            sickfish_code: item.fish_disease?.fish?.code || 'N/A',
+            treatment_name: item.treatment?.name || 'N/A',
+            dosage: item.dosage ? `${item.dosage} ${item.treatment?.medicine?.measurement?.name}` : 'N/A',
+            next_appointment: item.schedule?.datetime || 'N/A',
+            time_left: timeLeftMap[item.id] || 'Calculating...',
+            method: item.method,
+            applied_by: item.user?.name || 'N/A',
+        }));
     };
 
-    const formattedData = sickFishes.data.map((item) => ({
-        id: item.id,
-        fish_code: item.fish ? item.fish.code : 'N/A',
-        disease_name: item.disease ? item.disease.name : 'N/A',
-        disease_id: item.disease ? item.disease.id : 'N/A',
-        diagnosis_date: item.diagnosis_date,
-        recovery_date: item.recovery_date,
-        diagnosed_by: item.user ? item.user.name : 'N/A',
-    }));
-
-    const columns = [
+    const sickFishColumns = [
         { key: 'id', label: 'ID' },
         { key: 'fish_code', label: 'Fish' },
         { key: 'disease_name', label: 'Disease' },
@@ -107,22 +144,14 @@ const SickFishes = () => {
         { key: 'recovery_date', label: 'Recovery Date' },
         { key: 'diagnosed_by', label: 'Diagnosed By' },
     ];
-    const formattedTreatmentData = treatedFishes.data.map((item) => ({
-        id: item.id,
-        sickfish_code: item.fish_disease.fish.code ? item.fish_disease.fish.code : 'N/A',
-        treatment_name: item.treatment ? item.treatment.name : 'N/A',
-        dosage: item.dosage ? item.dosage + ' ' + item.treatment.medicine.measurement.name : 'N/A',
-        frequency: item.frequency,
-        method: item.method,
-        applied_by: item.user ? item.user.name : 'N/A',
-    }));
 
-    const treatmentColumns = [
+    const treatedFishColumns = [
         { key: 'id', label: 'ID' },
         { key: 'sickfish_code', label: 'Fish' },
         { key: 'treatment_name', label: 'Treatment' },
         { key: 'dosage', label: 'Dosage' },
-        { key: 'frequency', label: 'Frequency' },
+        { key: 'next_appointment', label: 'Next Appointment' },
+        { key: 'time_left', label: 'Time Left' },
         { key: 'method', label: 'Method' },
         { key: 'applied_by', label: 'Treatment Applied By' },
     ];
@@ -130,113 +159,103 @@ const SickFishes = () => {
     return (
         <AdminLayout>
             <main className="grid gap-4">
+                {/* Sick Fishes Section */}
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Sick Fishes" variant="filter" />
-                    <DataTable classStyles="min-h-[38.5em]" columns={columns} data={formattedData} actions={renderActions} />
+                    <DataTable classStyles="min-h-[38.5em]" columns={sickFishColumns} data={formatSickFishData()} actions={renderFishActions} />
                     <MultiPaginationNav links={sickFishes.links} queryParam="sickFishesPage" />
                 </div>
 
+                {/* Treated Fishes Section */}
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Fishes Being Treated" variant="filter" />
-                    <DataTable columns={treatmentColumns} data={formattedTreatmentData} actions={renderTreatmentActions} />
+                    <DataTable columns={treatedFishColumns} data={formatTreatedFishData()} actions={renderTreatmentActions} />
                     <MultiPaginationNav links={treatedFishes.links} queryParam="treatedFishPage" />
                 </div>
             </main>
 
             {/* Manage Fish Modal */}
-            <Modal isOpen={modalState.manageFish.isOpen} onClose={() => handleModalState('manageFish')} title="Manage Fish">
+            <Modal isOpen={modalState.manageFish.isOpen} onClose={() => toggleModal('manageFish')} title="Manage Fish">
                 <div className="flex gap-x-3">
-                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => handleModalState('applyTreatment')}>
-                        <div className="">Apply Treatment</div>
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => toggleModal('applyTreatment')}>
+                        Apply Treatment
                     </button>
-                    <button
-                        className="flex-1 cursor-pointer gap-x-3 rounded-md bg-gray-800 px-4 py-4"
-                        onClick={() => handleModalState('recoveryFish')}
-                    >
-                        <div className="">Has Recovered</div>
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => toggleModal('recoveryFish')}>
+                        Has Recovered
                     </button>
                 </div>
             </Modal>
 
             {/* Recovery Modal */}
-            <Modal isOpen={modalState.recoveryFish.isOpen} onClose={() => handleModalState('recoveryFish')} title="Fish Recovery">
+            <Modal isOpen={modalState.recoveryFish.isOpen} onClose={() => toggleModal('recoveryFish')} title="Fish Recovery">
                 <form className="flex flex-col gap-y-4" onSubmit={handleRecoveryForm}>
                     <label>Recovery Date</label>
                     <input
                         className="flex-1 rounded-md bg-gray-800 p-4"
                         type="date"
                         name="recoveryDate"
-                        id="recoveryDate"
                         value={data.recoveryDate}
                         onChange={(e) => setData('recoveryDate', e.target.value)}
                     />
                     <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" type="submit">
-                        <div className="">Confirm Recovery</div>
+                        Confirm Recovery
                     </button>
                 </form>
             </Modal>
 
             {/* Treatment Modal */}
-            <Modal isOpen={modalState.applyTreatment.isOpen} onClose={() => handleModalState('applyTreatment')} title="Apply Treatment">
+            <Modal isOpen={modalState.applyTreatment.isOpen} onClose={() => toggleModal('applyTreatment')} title="Apply Treatment">
                 {selectedFish ? (
                     <div className="grid grid-cols-2 gap-4 py-4">
-                        {/* Available Treatments */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-green-400">Available Treatments</h3>
-                            <div className="grid gap-2">
-                                {availableTreatment
-                                    .filter((t) => t.disease_id === selectedFish.disease_id)
-                                    .map((at) => (
-                                        <button
-                                            onClick={() => {
-                                                router.post('/kh-admin/fishes/treatment', {
-                                                    Treatment: at.id,
-                                                    Fish: selectedFish.id,
-                                                });
-                                            }}
-                                            className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
-                                        >
-                                            {at.name}
-                                        </button>
-                                    ))}
-                            </div>
-                        </div>
-
-                        {/* Unavailable Treatments */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-red-400">Unavailable Treatments</h3>
-                            <div className="grid gap-2">
-                                {unavailableTreatment
-                                    .filter((t) => t.disease_id === selectedFish.disease_id)
-                                    .map((ut) => (
-                                        <div key={ut.id} className="w-full rounded-lg bg-gray-800 p-3 text-gray-400 opacity-50">
-                                            {ut.name} (Medicine Out of Stock)
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
+                        <TreatmentSection
+                            title="Available Treatments"
+                            treatments={availableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
+                            className="text-green-400"
+                            isAvailable={true}
+                        />
+                        <TreatmentSection
+                            title="Unavailable Treatments"
+                            treatments={unavailableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
+                            className="text-red-400"
+                            isAvailable={false}
+                        />
                     </div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to view treatments.</p>
                 )}
             </Modal>
 
-            <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => handleModalState('treatedFish')} title="Manage Treatment">
+            <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
                 {selectedFish ? (
-                    <div className="flex gap-x-3">
+                    <div className="flex flex-col gap-y-3">
                         <button
-                            className="flex-1 rounded-md bg-gray-800 px-4 py-4 text-white hover:bg-green-500"
-                            onClick={handleTreatedOnce}
-                            disabled={selectedFish.frequency === 0}
+                            onClick={() => {
+                                router.post('/kh-admin/fishes/reschedule', { fish_id: selectedFish.id });
+                            }}
+                            className="w-full rounded-lg bg-blue-600 p-3 text-white hover:bg-blue-700"
                         >
-                            Treated Once ({selectedFish.frequency})
+                            Reschedule Appointment
                         </button>
-                        <button
-                            className="flex-1 rounded-md bg-gray-800 px-4 py-4 text-white hover:bg-red-500"
-                            onClick={handleDailyTreatmentCompleted}
-                        >
-                            Daily Treatment Completed
-                        </button>
+                        {timeLeftMap[selectedFish.id] !== 'Calculating...' &&
+                            timeLeftMap[selectedFish.id] !== 'N/A' &&
+                            (() => {
+                                const [hours, minutes] = timeLeftMap[selectedFish.id].split('h ').map((part) => parseInt(part));
+                                const totalMinutesLeft = (hours || 0) * 60 + (minutes || 0);
+                                return totalMinutesLeft < 10 ? (
+                                    <button
+                                        onClick={() => {
+                                            router.post('/kh-admin/fishes/treatment-applied', { fish_id: selectedFish.id });
+                                        }}
+                                        className="w-full rounded-lg bg-green-600 p-3 text-white hover:bg-green-700"
+                                    >
+                                        Treatment Applied
+                                    </button>
+                                ) : (
+                                    <button className="w-full cursor-not-allowed rounded-lg bg-gray-600 p-3 text-gray-400" disabled>
+                                        Treatment Applied (Available in {timeLeftMap[selectedFish.id]})
+                                    </button>
+                                );
+                            })()}
                     </div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
@@ -245,5 +264,40 @@ const SickFishes = () => {
         </AdminLayout>
     );
 };
+
+type TreatmentSectionProps = {
+    title: string;
+    treatments: any[];
+    className: string;
+    isAvailable: boolean;
+};
+
+const TreatmentSection = ({ title, treatments, className, isAvailable }: TreatmentSectionProps) => (
+    <div>
+        <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
+        <div className="grid gap-2">
+            {treatments.map((treatment) =>
+                isAvailable ? (
+                    <button
+                        key={treatment.id}
+                        onClick={() => {
+                            router.post('/kh-admin/fishes/treatment', {
+                                Treatment: treatment.id,
+                                Fish: treatment.id,
+                            });
+                        }}
+                        className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
+                    >
+                        {treatment.name}
+                    </button>
+                ) : (
+                    <div key={treatment.id} className="w-full rounded-lg bg-gray-800 p-3 text-gray-400 opacity-50">
+                        {treatment.name} (Medicine Out of Stock)
+                    </div>
+                ),
+            )}
+        </div>
+    </div>
+);
 
 export default SickFishes;
