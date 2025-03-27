@@ -1,5 +1,5 @@
 import Modal from '@/components/Modal';
-import PaginationNav from '@/components/PaginationNav';
+import MultiPaginationNav from '@/components/MultiPaginationNav';
 import AdminLayout from '@/layouts/AdminLayout';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { Settings } from 'lucide-react';
@@ -18,6 +18,7 @@ const SickFishes = () => {
     // Object to manage multiple modals dynamically
     const [modalState, setModalState] = useState({
         manageFish: { isOpen: false, selectedFish: null },
+        treatedFish: { isOpen: false, selectedFish: null },
         recoveryFish: { isOpen: false },
         applyTreatment: { isOpen: false },
     });
@@ -66,10 +67,27 @@ const SickFishes = () => {
         </button>
     );
     const renderTreatmentActions = (fish) => (
-        <button onClick={() => handleModalState('manageFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+        <button onClick={() => handleModalState('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
             <Settings className="h-4 w-4" />
         </button>
     );
+
+    const handleTreatedOnce = () => {
+        console.log('handle treated once, frequency', parseInt(selectedFish.frequency));
+        if (parseInt(selectedFish.frequency) > 0) {
+            router.post('/kh-admin/fishes/treatment/update', {
+                fish_id: selectedFish.id,
+                frequency: parseInt(selectedFish.frequency) - 1,
+            });
+        }
+    };
+
+    const handleDailyTreatmentCompleted = () => {
+        router.post('/kh-admin/fishes/treatment/update', {
+            fish_id: selectedFish.id,
+            frequency: 0,
+        });
+    };
 
     const formattedData = sickFishes.data.map((item) => ({
         id: item.id,
@@ -114,14 +132,14 @@ const SickFishes = () => {
             <main className="grid gap-4">
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Sick Fishes" variant="filter" />
-                    <DataTable columns={columns} data={formattedData} actions={renderActions} />
-                    <PaginationNav links={sickFishes.links} />
+                    <DataTable classStyles="min-h-[38.5em]" columns={columns} data={formattedData} actions={renderActions} />
+                    <MultiPaginationNav links={sickFishes.links} queryParam="sickFishesPage" />
                 </div>
 
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Fishes Being Treated" variant="filter" />
                     <DataTable columns={treatmentColumns} data={formattedTreatmentData} actions={renderTreatmentActions} />
-                    <PaginationNav links={sickFishes.links} />
+                    <MultiPaginationNav links={treatedFishes.links} queryParam="treatedFishPage" />
                 </div>
             </main>
 
@@ -200,6 +218,28 @@ const SickFishes = () => {
                     </div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to view treatments.</p>
+                )}
+            </Modal>
+
+            <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => handleModalState('treatedFish')} title="Manage Treatment">
+                {selectedFish ? (
+                    <div className="flex gap-x-3">
+                        <button
+                            className="flex-1 rounded-md bg-gray-800 px-4 py-4 text-white hover:bg-green-500"
+                            onClick={handleTreatedOnce}
+                            disabled={selectedFish.frequency === 0}
+                        >
+                            Treated Once ({selectedFish.frequency})
+                        </button>
+                        <button
+                            className="flex-1 rounded-md bg-gray-800 px-4 py-4 text-white hover:bg-red-500"
+                            onClick={handleDailyTreatmentCompleted}
+                        >
+                            Daily Treatment Completed
+                        </button>
+                    </div>
+                ) : (
+                    <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
                 )}
             </Modal>
         </AdminLayout>

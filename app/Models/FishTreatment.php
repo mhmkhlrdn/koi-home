@@ -11,6 +11,8 @@ class FishTreatment extends Model
 
     protected $fillable = ['fish_disease_id', 'treatment_id', 'frequency', 'dosage', 'method', 'user_id'];
 
+    public $timestamps = false;
+
     public function fishDisease()
     {
         return $this->belongsTo(FishDisease::class);

@@ -7,14 +7,15 @@ interface Column {
 }
 
 interface DataTableProps {
+    classStyles: string;
     columns: Column[];
     data: any[];
     actions?: (item: any) => React.ReactNode;
 }
 
-const DataTable: React.FC<DataTableProps> = ({ columns, data, actions }) => {
+const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actions }) => {
     return (
-        <div className="overflow-x-auto rounded-lg bg-[#485367] shadow-md">
+        <div className={`overflow-x-auto rounded-lg bg-[#485367] shadow-md ${classStyles}`}>
             <table className="w-full table-auto border-collapse">
                 <thead>
                     <tr className="bg-gray-900 text-white">

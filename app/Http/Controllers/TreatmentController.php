@@ -15,6 +15,16 @@ use Inertia\Inertia;
 
 class TreatmentController extends Controller
 {
+    public function update (Request $request){
+        $validated = $request->validate([
+            'fish_id' => 'required|int',
+            'frequency' => 'required|int',
+        ]);
+
+        FishTreatment::find($validated['fish_id'])->updateQuietly([
+            'frequency' => $validated['frequency']
+        ]);
+    }
     public function store (Request $request){
         $validated = $request->validate([
             'name' => 'required|string|max:255|',
