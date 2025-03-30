@@ -227,36 +227,7 @@ const SickFishes = () => {
 
             <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
                 {selectedFish ? (
-                    <div className="flex flex-col gap-y-3">
-                        <button
-                            onClick={() => {
-                                router.post('/kh-admin/fishes/reschedule', { fish_id: selectedFish.id });
-                            }}
-                            className="w-full rounded-lg bg-blue-600 p-3 text-white hover:bg-blue-700"
-                        >
-                            Reschedule Appointment
-                        </button>
-                        {timeLeftMap[selectedFish.id] !== 'Calculating...' &&
-                            timeLeftMap[selectedFish.id] !== 'N/A' &&
-                            (() => {
-                                const [hours, minutes] = timeLeftMap[selectedFish.id].split('h ').map((part) => parseInt(part));
-                                const totalMinutesLeft = (hours || 0) * 60 + (minutes || 0);
-                                return totalMinutesLeft < 10 ? (
-                                    <button
-                                        onClick={() => {
-                                            router.post('/kh-admin/fishes/treatment-applied', { fish_id: selectedFish.id });
-                                        }}
-                                        className="w-full rounded-lg bg-green-600 p-3 text-white hover:bg-green-700"
-                                    >
-                                        Treatment Applied
-                                    </button>
-                                ) : (
-                                    <button className="w-full cursor-not-allowed rounded-lg bg-gray-600 p-3 text-gray-400" disabled>
-                                        Treatment Applied (Available in {timeLeftMap[selectedFish.id]})
-                                    </button>
-                                );
-                            })()}
-                    </div>
+                    <div className="flex gap-x-3"></div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
                 )}
