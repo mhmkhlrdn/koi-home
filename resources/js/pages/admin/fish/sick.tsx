@@ -4,6 +4,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import DataTable from '../../../components/DataTable';
 import MainHeader from '../../../components/MainHeader';
 
 type Fish = {
@@ -14,13 +15,13 @@ type Fish = {
 
 type ModalState = {
     manageFish: { isOpen: boolean; selectedFish: Fish | null };
-    // treatedFish: { isOpen: boolean; selectedTreatedFish: Fish | null };
+    treatedFish: { isOpen: boolean; selectedFish: Fish | null };
     recoveryFish: { isOpen: boolean };
     applyTreatment: { isOpen: boolean };
 };
 
 const SickFishes = () => {
-    const { sickFishes, availableTreatment, unavailableTreatment } = usePage().props;
+    const { sickFishes, treatedFishes, availableTreatment, unavailableTreatment } = usePage().props;
     const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
     const { data, setData, post } = useForm({
         fish_id: selectedFish?.id || '',
@@ -29,7 +30,7 @@ const SickFishes = () => {
 
     const [modalState, setModalState] = useState<ModalState>({
         manageFish: { isOpen: false, selectedFish: null },
-        // treatedFish: { isOpen: false, selectedTreatedFish: null },
+        treatedFish: { isOpen: false, selectedFish: null },
         recoveryFish: { isOpen: false },
         applyTreatment: { isOpen: false },
     });
@@ -37,35 +38,35 @@ const SickFishes = () => {
     const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
 
     // Calculate time left for each treated fish
-    // useEffect(() => {
-    //     const calculateTimeLeft = () => {
-    //         const updatedTimeLeft: Record<string, string> = {};
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const updatedTimeLeft: Record<string, string> = {};
 
-    //         treatedFishes.data.forEach((item) => {
-    //             if (!item.schedule?.datetime) {
-    //                 updatedTimeLeft[item.id] = 'N/A';
-    //                 return;
-    //             }
+            treatedFishes.data.forEach((item) => {
+                if (!item.schedule?.datetime) {
+                    updatedTimeLeft[item.id] = 'N/A';
+                    return;
+                }
 
-    //             const appointmentTime = new Date(item.schedule.datetime);
-    //             const currentTime = new Date();
-    //             const diffMs = appointmentTime - currentTime;
+                const appointmentTime = new Date(item.schedule.datetime);
+                const currentTime = new Date();
+                const diffMs = appointmentTime - currentTime;
 
-    //             if (diffMs <= 0) {
-    //                 updatedTimeLeft[item.id] = "Time's up";
-    //             } else {
-    //                 const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    //                 const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    //                 updatedTimeLeft[item.id] = `${hours}h ${minutes}m`;
-    //             }
-    //         });
+                if (diffMs <= 0) {
+                    updatedTimeLeft[item.id] = "Time's up";
+                } else {
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    updatedTimeLeft[item.id] = `${hours}h ${minutes}m`;
+                }
+            });
 
-    //         setTimeLeftMap(updatedTimeLeft);
-    //     };
+            setTimeLeftMap(updatedTimeLeft);
+        };
 
-    //     const interval = setInterval(calculateTimeLeft, 1000);
-    //     return () => clearInterval(interval);
-    // }, [treatedFishes]);
+        const interval = setInterval(calculateTimeLeft, 1000);
+        return () => clearInterval(interval);
+    }, [treatedFishes]);
 
     useEffect(() => {
         if (selectedFish) {
@@ -74,28 +75,16 @@ const SickFishes = () => {
     }, [selectedFish]);
 
     const toggleModal = (modalName: keyof ModalState, fish: Fish | null = null) => {
-        setSelectedFish(fish ?? null);
+        if (fish) setSelectedFish(fish);
+
         setModalState((prev) => ({
             ...prev,
             [modalName]: {
-                isOpen: !prev[modalName].isOpen,
-                selectedFish: fish ?? null,
+                isOpen: !prev[modalName]?.isOpen,
+                ...(fish ? { selectedFish: fish } : {}),
             },
         }));
-        console.log('selected fish', selectedFish);
-        console.log('selected fish disease id', selectedFish.disease_id);
     };
-
-    // const toggleTreatmentModal = (modalName: keyof ModalState, fish: Fish | null = null) => {
-    //     setSelectedFish(fish ?? null);
-    //     setModalState((prev) => ({
-    //         ...prev,
-    //         [modalName]: {
-    //             isOpen: !prev[modalName].isOpen,
-    //             selectedTreatedFish: fish ?? null,
-    //         },
-    //     }));
-    // };
 
     const closeAllModals = () => {
         Object.keys(modalState).forEach((key) => {
@@ -110,24 +99,51 @@ const SickFishes = () => {
         });
     };
 
-    // const renderTreatmentActions = (fish: Fish) => (
-    //     <button onClick={() => toggleTreatmentModal('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
-    //         <Settings className="h-4 w-4" />
-    //     </button>
-    // );
+    const renderFishActions = (fish: Fish) => (
+        <button onClick={() => toggleModal('manageFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+            <Settings className="h-4 w-4" />
+        </button>
+    );
 
-    // const formatTreatedFishData = () => {
-    //     return treatedFishes.data.map((item) => ({
-    //         id: item.id,
-    //         sickfish_code: item.fish_disease?.fish?.code || 'N/A',
-    //         treatment_name: item.treatment?.name || 'N/A',
-    //         dosage: item.dosage ? `${item.dosage} ${item.treatment?.medicine?.measurement?.name}` : 'N/A',
-    //         next_appointment: item.schedule?.datetime || 'N/A',
-    //         time_left: timeLeftMap[item.id] || 'Calculating...',
-    //         method: item.method,
-    //         applied_by: item.user?.name || 'N/A',
-    //     }));
-    // };
+    const renderTreatmentActions = (fish: Fish) => (
+        <button onClick={() => toggleModal('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
+            <Settings className="h-4 w-4" />
+        </button>
+    );
+
+    const formatSickFishData = () => {
+        return sickFishes.data.map((item) => ({
+            id: item.id,
+            fish_code: item.fish?.code || 'N/A',
+            disease_name: item.disease?.name || 'N/A',
+            disease_id: item.disease?.id || 'N/A',
+            diagnosis_date: item.diagnosis_date,
+            recovery_date: item.recovery_date,
+            diagnosed_by: item.user?.name || 'N/A',
+        }));
+    };
+
+    const formatTreatedFishData = () => {
+        return treatedFishes.data.map((item) => ({
+            id: item.id,
+            sickfish_code: item.fish_disease?.fish?.code || 'N/A',
+            treatment_name: item.treatment?.name || 'N/A',
+            dosage: item.dosage ? `${item.dosage} ${item.treatment?.medicine?.measurement?.name}` : 'N/A',
+            next_appointment: item.schedule?.datetime || 'N/A',
+            time_left: timeLeftMap[item.id] || 'Calculating...',
+            method: item.method,
+            applied_by: item.user?.name || 'N/A',
+        }));
+    };
+
+    const sickFishColumns = [
+        { key: 'id', label: 'ID' },
+        { key: 'fish_code', label: 'Fish' },
+        { key: 'disease_name', label: 'Disease' },
+        { key: 'diagnosis_date', label: 'Diagnosis Date' },
+        { key: 'recovery_date', label: 'Recovery Date' },
+        { key: 'diagnosed_by', label: 'Diagnosed By' },
+    ];
 
     const treatedFishColumns = [
         { key: 'id', label: 'ID' },
@@ -146,55 +162,16 @@ const SickFishes = () => {
                 {/* Sick Fishes Section */}
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Sick Fishes" variant="filter" />
-                    <div className={`overflow-x-auto rounded-lg bg-[#485367] shadow-md`}>
-                        <table className="w-full table-auto border-collapse">
-                            <thead>
-                                <tr className="bg-gray-900 text-white">
-                                    <th className="border p-3">ID</th>
-                                    <th className="border p-3">Code</th>
-                                    <th className="border p-3">Disease Name</th>
-                                    <th className="border p-3">Diagnosis Date</th>
-                                    <th className="border p-3">Recovery Date</th>
-                                    <th className="border p-3">Diagnosed By</th>
-                                    <th className="border p-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sickFishes.data.map((sick) => (
-                                    <tr className="mx-auto border-t text-center">
-                                        <td className="border p-3">{sick.id}</td>
-                                        <td className="border p-3">{sick.fish.code}</td>
-                                        <td className="border p-3">{sick.disease.name}</td>
-                                        <td className="border p-3">{sick.diagnosis_date}</td>
-                                        <td className="border p-3">{sick.recovery_date ? sick.recovery_date : 'N/A'}</td>
-                                        <td className="border p-3">{sick.user?.name}</td>
-                                        <td className="border p-3">
-                                            <button
-                                                onClick={() => toggleModal('manageFish', sick)}
-                                                className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
-                                            >
-                                                <Settings className="h-4 w-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable classStyles="min-h-[38.5em]" columns={sickFishColumns} data={formatSickFishData()} actions={renderFishActions} />
                     <MultiPaginationNav links={sickFishes.links} queryParam="sickFishesPage" />
                 </div>
 
                 {/* Treated Fishes Section */}
-                {/* <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Fishes Being Treated" variant="filter" />
-                    <DataTable
-                        classStyles="min-h-[38.5em]"
-                        columns={treatedFishColumns}
-                        data={formatTreatedFishData()}
-                        actions={renderTreatmentActions}
-                    />
+                    <DataTable columns={treatedFishColumns} data={formatTreatedFishData()} actions={renderTreatmentActions} />
                     <MultiPaginationNav links={treatedFishes.links} queryParam="treatedFishPage" />
-                </div> */}
+                </div>
             </main>
 
             {/* Manage Fish Modal */}
@@ -228,53 +205,33 @@ const SickFishes = () => {
 
             {/* Treatment Modal */}
             <Modal isOpen={modalState.applyTreatment.isOpen} onClose={() => toggleModal('applyTreatment')} title="Apply Treatment">
-                <div className="grid grid-cols-2 gap-4 py-4">
-                    {/* Available Treatments */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-green-400">Available Treatments</h3>
-                        <div className="grid gap-2">
-                            {availableTreatment
-                                .filter((t) => t.disease_id === selectedFish.disease_id)
-                                .map((at) => (
-                                    <button
-                                        key={at.id}
-                                        onClick={() => {
-                                            router.post('/kh-admin/fishes/treatment', {
-                                                Treatment: at.id,
-                                                Fish: selectedFish?.id,
-                                            });
-                                        }}
-                                        className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
-                                    >
-                                        {at.name}
-                                    </button>
-                                ))}
-                        </div>
+                {selectedFish ? (
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                        <TreatmentSection
+                            title="Available Treatments"
+                            treatments={availableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
+                            className="text-green-400"
+                            isAvailable={true}
+                        />
+                        <TreatmentSection
+                            title="Unavailable Treatments"
+                            treatments={unavailableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
+                            className="text-red-400"
+                            isAvailable={false}
+                        />
                     </div>
-
-                    {/* Unavailable Treatments */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-red-400">Unavailable Treatments</h3>
-                        <div className="grid gap-2">
-                            {unavailableTreatment
-                                .filter((t) => t.disease_id === selectedFish.disease_id)
-                                .map((ut) => (
-                                    <div key={ut.id} className="w-full rounded-lg bg-gray-800 p-3 text-gray-400 opacity-50">
-                                        {ut.name} (Medicine Out of Stock)
-                                    </div>
-                                ))}
-                        </div>
-                    </div>
-                </div>
+                ) : (
+                    <p className="text-center text-gray-400">Select a fish to view treatments.</p>
+                )}
             </Modal>
 
-            {/* <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
+            <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
                 {selectedFish ? (
                     <div className="flex gap-x-3"></div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
                 )}
-            </Modal> */}
+            </Modal>
         </AdminLayout>
     );
 };
@@ -285,5 +242,33 @@ type TreatmentSectionProps = {
     className: string;
     isAvailable: boolean;
 };
+
+const TreatmentSection = ({ title, treatments, className, isAvailable }: TreatmentSectionProps) => (
+    <div>
+        <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
+        <div className="grid gap-2">
+            {treatments.map((treatment) =>
+                isAvailable ? (
+                    <button
+                        key={treatment.id}
+                        onClick={() => {
+                            router.post('/kh-admin/fishes/treatment', {
+                                Treatment: treatment.id,
+                                Fish: treatment.id,
+                            });
+                        }}
+                        className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
+                    >
+                        {treatment.name}
+                    </button>
+                ) : (
+                    <div key={treatment.id} className="w-full rounded-lg bg-gray-800 p-3 text-gray-400 opacity-50">
+                        {treatment.name} (Medicine Out of Stock)
+                    </div>
+                ),
+            )}
+        </div>
+    </div>
+);
 
 export default SickFishes;
