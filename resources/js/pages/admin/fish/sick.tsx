@@ -6,6 +6,7 @@ import { Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataTable from '../../../components/DataTable';
 import MainHeader from '../../../components/MainHeader';
+import Navbar from '../../../components/ui/Navbar';
 
 type Fish = {
     id: string;
@@ -156,9 +157,21 @@ const SickFishes = () => {
         { key: 'applied_by', label: 'Treatment Applied By' },
     ];
 
+    const links = [
+        {
+            label: 'Diagnosed',
+            route: 'sickfishes',
+        },
+        {
+            label: 'Under Treatment',
+            route: 'treatedfishes',
+        },
+    ];
+
     return (
         <AdminLayout>
             <main className="grid gap-4">
+                <Navbar links={links} />
                 {/* Sick Fishes Section */}
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader title="Sick Fishes" variant="filter" />
