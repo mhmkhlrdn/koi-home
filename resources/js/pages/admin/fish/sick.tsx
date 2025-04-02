@@ -16,13 +16,12 @@ type Fish = {
 
 type ModalState = {
     manageFish: { isOpen: boolean; selectedFish: Fish | null };
-    treatedFish: { isOpen: boolean; selectedFish: Fish | null };
     recoveryFish: { isOpen: boolean };
     applyTreatment: { isOpen: boolean };
 };
 
 const SickFishes = () => {
-    const { sickFishes, treatedFishes, availableTreatment, unavailableTreatment } = usePage().props;
+    const { sickFishes, availableTreatment, unavailableTreatment } = usePage().props;
     const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
     const { data, setData, post } = useForm({
         fish_id: selectedFish?.id || '',
@@ -31,7 +30,6 @@ const SickFishes = () => {
 
     const [modalState, setModalState] = useState<ModalState>({
         manageFish: { isOpen: false, selectedFish: null },
-        treatedFish: { isOpen: false, selectedFish: null },
         recoveryFish: { isOpen: false },
         applyTreatment: { isOpen: false },
     });
@@ -39,35 +37,6 @@ const SickFishes = () => {
     const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
 
     // Calculate time left for each treated fish
-    useEffect(() => {
-        const calculateTimeLeft = () => {
-            const updatedTimeLeft: Record<string, string> = {};
-
-            treatedFishes.data.forEach((item) => {
-                if (!item.schedule?.datetime) {
-                    updatedTimeLeft[item.id] = 'N/A';
-                    return;
-                }
-
-                const appointmentTime = new Date(item.schedule.datetime);
-                const currentTime = new Date();
-                const diffMs = appointmentTime - currentTime;
-
-                if (diffMs <= 0) {
-                    updatedTimeLeft[item.id] = "Time's up";
-                } else {
-                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    updatedTimeLeft[item.id] = `${hours}h ${minutes}m`;
-                }
-            });
-
-            setTimeLeftMap(updatedTimeLeft);
-        };
-
-        const interval = setInterval(calculateTimeLeft, 1000);
-        return () => clearInterval(interval);
-    }, [treatedFishes]);
 
     useEffect(() => {
         if (selectedFish) {
@@ -106,12 +75,6 @@ const SickFishes = () => {
         </button>
     );
 
-    const renderTreatmentActions = (fish: Fish) => (
-        <button onClick={() => toggleModal('treatedFish', fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
-            <Settings className="h-4 w-4" />
-        </button>
-    );
-
     const formatSickFishData = () => {
         return sickFishes.data.map((item) => ({
             id: item.id,
@@ -124,19 +87,6 @@ const SickFishes = () => {
         }));
     };
 
-    const formatTreatedFishData = () => {
-        return treatedFishes.data.map((item) => ({
-            id: item.id,
-            sickfish_code: item.fish_disease?.fish?.code || 'N/A',
-            treatment_name: item.treatment?.name || 'N/A',
-            dosage: item.dosage ? `${item.dosage} ${item.treatment?.medicine?.measurement?.name}` : 'N/A',
-            next_appointment: item.schedule?.datetime || 'N/A',
-            time_left: timeLeftMap[item.id] || 'Calculating...',
-            method: item.method,
-            applied_by: item.user?.name || 'N/A',
-        }));
-    };
-
     const sickFishColumns = [
         { key: 'id', label: 'ID' },
         { key: 'fish_code', label: 'Fish' },
@@ -144,17 +94,6 @@ const SickFishes = () => {
         { key: 'diagnosis_date', label: 'Diagnosis Date' },
         { key: 'recovery_date', label: 'Recovery Date' },
         { key: 'diagnosed_by', label: 'Diagnosed By' },
-    ];
-
-    const treatedFishColumns = [
-        { key: 'id', label: 'ID' },
-        { key: 'sickfish_code', label: 'Fish' },
-        { key: 'treatment_name', label: 'Treatment' },
-        { key: 'dosage', label: 'Dosage' },
-        { key: 'next_appointment', label: 'Next Appointment' },
-        { key: 'time_left', label: 'Time Left' },
-        { key: 'method', label: 'Method' },
-        { key: 'applied_by', label: 'Treatment Applied By' },
     ];
 
     const links = [
@@ -174,16 +113,9 @@ const SickFishes = () => {
                 <Navbar links={links} />
                 {/* Sick Fishes Section */}
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                    <MainHeader title="Sick Fishes" variant="filter" />
-                    <DataTable classStyles="min-h-[38.5em]" columns={sickFishColumns} data={formatSickFishData()} actions={renderFishActions} />
+                    <MainHeader title="Diagnosed Fishes" variant="filter" />
+                    <DataTable columns={sickFishColumns} data={formatSickFishData()} actions={renderFishActions} />
                     <MultiPaginationNav links={sickFishes.links} queryParam="sickFishesPage" />
-                </div>
-
-                {/* Treated Fishes Section */}
-                <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                    <MainHeader title="Fishes Being Treated" variant="filter" />
-                    <DataTable columns={treatedFishColumns} data={formatTreatedFishData()} actions={renderTreatmentActions} />
-                    <MultiPaginationNav links={treatedFishes.links} queryParam="treatedFishPage" />
                 </div>
             </main>
 
@@ -235,14 +167,6 @@ const SickFishes = () => {
                     </div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to view treatments.</p>
-                )}
-            </Modal>
-
-            <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
-                {selectedFish ? (
-                    <div className="flex gap-x-3"></div>
-                ) : (
-                    <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
                 )}
             </Modal>
         </AdminLayout>

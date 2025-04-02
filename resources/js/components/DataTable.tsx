@@ -7,7 +7,7 @@ interface Column {
 }
 
 interface DataTableProps {
-    classStyles: string;
+    classStyles?: string;
     columns: Column[];
     data: any[];
     actions?: (item: any) => React.ReactNode;

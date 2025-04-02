@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/treatment/update', [TreatmentController::class, 'update'])->name('treatment.update');
 
             Route::get('/sickfishes', [SickController::class, 'index'])->name('sick-fishes');
+            Route::get('/treatedfishes', [SickController::class, 'index_treated'])->name('treated-fishes');
             Route::post('/sickfishes/recovery', [SickController::class, 'recovery'])->name('fish.recovery');
             Route::post("/treatment", [TreatmentController::class, 'treat'])->name('treatment.treat');
             Route::post("/treatment/treated", [TreatmentController::class, 'treated'])->name('treatment.treated');

@@ -13,6 +13,14 @@ use Inertia\Inertia;
 
 class SickController extends Controller
 {
+    public function index_treated(Request $request){
+        $treatedFishesPage = $request->query('treatedFishesPage', 1);
+        $treatedFishes = FishTreatment::with(['fishDisease.fish', 'treatment.medicine.measurement', 'user', 'schedule'])
+        ->paginate(10, ['*'], 'treatedFishesPage');
+        return Inertia::render('admin/fish/UnderTreatment', [
+            'treatedFishes' => $treatedFishes,
+        ]);
+    }
     public function index(Request $request)
 {
     // Get pagination query parameters
