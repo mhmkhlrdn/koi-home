@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DiseaseController;
 use App\Http\Controllers\FishController;
+use App\Http\Controllers\VarietyController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SickController;
@@ -53,6 +54,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
         Route::prefix('fishes')->group(function (){
+            Route::get('/variety', [VarietyController::class, 'index'])->name('variety');
         Route::post('/treatment/update', [TreatmentController::class, 'update'])->name('treatment.update');
 
             Route::get('/sickfishes', [SickController::class, 'index'])->name('sick-fishes');
