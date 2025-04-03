@@ -34,13 +34,12 @@ const SickFishes = () => {
         applyTreatment: { isOpen: false },
     });
 
-    const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
-
     // Calculate time left for each treated fish
 
     useEffect(() => {
         if (selectedFish) {
             setData('fish_id', selectedFish.id);
+            console.log(selectedFish);
         }
     }, [selectedFish]);
 
@@ -120,7 +119,7 @@ const SickFishes = () => {
             </main>
 
             {/* Manage Fish Modal */}
-            <Modal isOpen={modalState.manageFish.isOpen} onClose={() => toggleModal('manageFish')} title="Manage Fish">
+            <Modal isOpen={modalState.manageFish.isOpen} onClose={() => toggleModal('manageFish')} title={`Manage Fish ${selectedFish?.fish_code}`}>
                 <div className="flex gap-x-3">
                     <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => toggleModal('applyTreatment')}>
                         Apply Treatment
@@ -149,16 +148,22 @@ const SickFishes = () => {
             </Modal>
 
             {/* Treatment Modal */}
-            <Modal isOpen={modalState.applyTreatment.isOpen} onClose={() => toggleModal('applyTreatment')} title="Apply Treatment">
+            <Modal
+                isOpen={modalState.applyTreatment.isOpen}
+                onClose={() => toggleModal('applyTreatment')}
+                title={`Apply Treatment For ${selectedFish?.fish_code}`}
+            >
                 {selectedFish ? (
                     <div className="grid grid-cols-2 gap-4 py-4">
                         <TreatmentSection
+                            selectedFishId={selectedFish?.id}
                             title="Available Treatments"
                             treatments={availableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
                             className="text-green-400"
                             isAvailable={true}
                         />
                         <TreatmentSection
+                            selectedFishId={selectedFish?.id}
                             title="Unavailable Treatments"
                             treatments={unavailableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
                             className="text-red-400"
@@ -178,9 +183,10 @@ type TreatmentSectionProps = {
     treatments: any[];
     className: string;
     isAvailable: boolean;
+    selectedFishId: string;
 };
 
-const TreatmentSection = ({ title, treatments, className, isAvailable }: TreatmentSectionProps) => (
+const TreatmentSection = ({ title, treatments, className, isAvailable, selectedFishId }: TreatmentSectionProps) => (
     <div>
         <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
         <div className="grid gap-2">
@@ -191,7 +197,7 @@ const TreatmentSection = ({ title, treatments, className, isAvailable }: Treatme
                         onClick={() => {
                             router.post('/kh-admin/fishes/treatment', {
                                 Treatment: treatment.id,
-                                Fish: treatment.id,
+                                Fish: selectedFishId,
                             });
                         }}
                         className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"
