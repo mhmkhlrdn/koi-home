@@ -34,10 +34,6 @@ const SickFishes = () => {
         applyTreatment: { isOpen: false },
     });
 
-    const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
-
-    // Calculate time left for each treated fish
-
     useEffect(() => {
         if (selectedFish) {
             setData('fish_id', selectedFish.id);
