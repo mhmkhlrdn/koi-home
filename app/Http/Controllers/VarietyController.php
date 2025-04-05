@@ -12,4 +12,13 @@ class VarietyController extends Controller
         $fishVariety = Variety::withCount(['fishes'])->paginate(10);
         return Inertia::render('admin/fish/Variety', ['fishVariety' => $fishVariety]);
     }
+    public function store (Request $request) {
+$validated = $request->validate([
+    'name' => 'required|string|max:255',
+]);
+Variety::insert([
+    'name' => $validated['name']
+]);
+return redirect()->route('variety')->with('success', 'Variety added succesfully');
+    }
 }

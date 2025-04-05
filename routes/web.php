@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('fishes')->group(function (){
             Route::get('/variety', [VarietyController::class, 'index'])->name('variety');
+            Route::post('/variety/store', [VarietyController::class, 'store'])->name('variety.store');
         Route::post('/treatment/update', [TreatmentController::class, 'update'])->name('treatment.update');
 
             Route::get('/sickfishes', [SickController::class, 'index'])->name('sick-fishes');
