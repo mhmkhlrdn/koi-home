@@ -121,7 +121,7 @@ const Fishes = () => {
         <AdminLayout>
             <main className="grid grid-cols-4 gap-4">
                 <div className="col-span-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                    <MainHeader title="Fish Management" />
+                    <MainHeader variant="primary" createHref={route('fishes.create')} title="Fish Management" />
                     <DataTable columns={columns} data={fishItems.data} actions={renderActions} />
                     <PaginationNav links={fishItems.links} />
                 </div>

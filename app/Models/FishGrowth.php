@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class FishGrowth extends Model
 {
     use HasFactory;
+    public $timestamps = false;
 
     protected $fillable = ['fish_id', 'length', 'recorded_at', 'photoUrl', 'user_id'];
 

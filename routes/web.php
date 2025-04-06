@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
         Route::prefix('fishes')->group(function (){
+            Route::get('/create', [FishController::class, 'create'])->name('fishes.create');
+            Route::post('/store', [FishController::class, 'store'])->name('fishes.store');
             Route::get('/variety', [VarietyController::class, 'index'])->name('variety');
             Route::post('/variety/store', [VarietyController::class, 'store'])->name('variety.store');
         Route::post('/treatment/update', [TreatmentController::class, 'update'])->name('treatment.update');

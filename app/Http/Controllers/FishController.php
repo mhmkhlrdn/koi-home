@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bloodline;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Fish;
+use App\Models\FishGrowth;
+use App\Models\Pool;
+use App\Models\Variety;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class FishController extends Controller
@@ -72,12 +77,62 @@ $recentlyBornFishes = Fish::whereBetween('birthDate', [now()->subDays(7), now()]
         'fishItems' => $fishes,
         'recentChanges' => $recentChanges,
         'recentlyBornFishes' => $recentlyBornFishes,
-        'bloodlines' => \App\Models\Bloodline::select('id', 'name')->get(),
-        'varieties' => \App\Models\Variety::select('id', 'name')->get(),
+        'bloodlines' => Bloodline::select('id', 'name')->get(),
+        'varieties' => Variety::select('id', 'name')->get(),
         'users' => \App\Models\User::select('id', 'name')->get(),
-        'pools' => \App\Models\Pool::select('id', 'name')->get(),
+        'pools' => Pool::select('id', 'name')->get(),
     ]);
 }
+
+public function create () {
+
+    $bloodlines = Bloodline::all();
+    $varieties = Variety::all();
+    $pools = Pool::all();
+
+    return Inertia::render('admin/fish/Create', [
+        'bloodlines' => $bloodlines,
+        'varieties' => $varieties,
+        'pools' => $pools,
+    ]);
+}
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'code' => 'required|string|max:255|unique:fishes,code',
+        'bloodline_id' => 'required|numeric',
+        'variety_id' => 'required|numeric',
+        'pool_id' => 'required|numeric',
+        'birthDate' => 'required|date',
+        'recordedDate' => 'required|date',
+        'gender' => 'required|in:male,female,unknown',
+        'size' => 'required|numeric',
+        'image' => 'nullable|image', // Optional image file, max 2MB
+    ]);
+
+    $validated['user_id'] = Auth::id();
+
+    // Save fish
+    $fish = Fish::create($validated);
+
+    // Handle uploaded image
+    $imagePath = null;
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('fish_images', 'public');
+    }
+
+    // Save fish growth
+    FishGrowth::create([
+        'length' => $validated['size'],
+        'recorded_at' => $validated['recordedDate'],
+        'photoUrl' => $imagePath,
+        'user_id' => Auth::id(),
+        'fish_id' => $fish->id,
+    ]);
+
+    return redirect()->route('fishes')->with('success', 'Fish created successfully.');
+}
+
 
 
 }
