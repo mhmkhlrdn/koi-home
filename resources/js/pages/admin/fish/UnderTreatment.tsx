@@ -15,6 +15,7 @@ type Fish = {
 };
 type ModalState = {
     treatedFish: { isOpen: boolean; selectedFish: Fish | null };
+    confirmSchedule: { isOpen: boolean };
 };
 
 const UnderTreatment = () => {
@@ -30,6 +31,7 @@ const UnderTreatment = () => {
     ];
     const [modalState, setModalState] = useState<ModalState>({
         treatedFish: { isOpen: false, selectedFish: null },
+        confirmSchedule: { isOpen: false },
     });
     const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
     const { data, setData, post } = useForm({
@@ -132,10 +134,20 @@ const UnderTreatment = () => {
 
             <Modal isOpen={modalState.treatedFish.isOpen} onClose={() => toggleModal('treatedFish')} title="Manage Treatment">
                 {selectedFish ? (
-                    <div className="flex gap-x-3"></div>
+                    <div className="flex flex-col gap-y-4">
+                        <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => toggleModal('confirmSchedule')}>
+                            Treatment Applied ({timeLeftMap[selectedFish.id]})
+                        </button>
+                    </div>
                 ) : (
                     <p className="text-center text-gray-400">Select a fish to manage treatment.</p>
                 )}
+            </Modal>
+            <Modal isOpen={modalState.confirmSchedule.isOpen} onClose={() => toggleModal('confirmSchedule')} title="Schedule the next appointment?">
+                <div className="flex flex-col gap-y-4">
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4">Yes</button>
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4">No</button>
+                </div>
             </Modal>
         </AdminLayout>
     );
