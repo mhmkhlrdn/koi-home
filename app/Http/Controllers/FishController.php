@@ -35,54 +35,57 @@ class FishController extends Controller
 
         return redirect()->back()->with('success', 'Fish updated successfully.');
     }
-    public function index()
+    public function index(Request $request)
 {
-    $recentChanges = Fish::with('user')
-    ->whereNotNull('updated_at')
-    ->latest('updated_at')
-    ->limit(5)
-    ->get()
-    ->map(fn ($fish) => [
+    $query = Fish::with(['bloodline', 'variety', 'user', 'pool']);
 
-        'fish_code' => $fish->code,
-        'user_name' => $fish->user->name ?? 'Unknown',
-        'modified_at' => $fish->updated_at->format('Y-m-d H:i:s'),
+    if ($request->bloodline_id) {
+        $query->where('bloodline_id', $request->bloodline_id);
+    }
+
+    if ($request->variety_id) {
+        $query->where('variety_id', $request->variety_id);
+    }
+
+    if ($request->owner_id) {
+        $query->where('user_id', $request->owner_id);
+    }
+
+    if ($request->pool_id) {
+        $query->where('pool_id', $request->pool_id);
+    }
+
+    $fishes = $query->paginate(10)->appends($request->only([
+        'bloodline_id',
+        'variety_id',
+        'owner_id',
+        'pool_id',
+    ]))->through(fn ($fish) => [
+        'id' => $fish->id,
+        'code' => $fish->code,
+        'bloodline_id' => $fish->bloodline->id ?? null,
+        'bloodline_name' => $fish->bloodline->name ?? null,
+        'variety_id' => $fish->variety->id ?? null,
+        'variety_name' => $fish->variety->name ?? null,
+        'gender' => $fish->gender,
+        'birthDate' => $fish->birthDate,
+        'owner_id' => $fish->user->id ?? null,
+        'owner_name' => $fish->user->name ?? null,
+        'pool_id' => $fish->pool->id ?? null,
+        'pool_name' => $fish->pool->name ?? null,
     ]);
-
-// Fetch Fishes Born This Week
-$recentlyBornFishes = Fish::whereBetween('birthDate', [now()->subDays(7), now()])
-    ->latest('birthDate')
-    ->get(['id', 'code', 'birthDate']);
-
-    $fishes = Fish::with(['bloodline', 'variety', 'user', 'pool'])
-    ->paginate(10)
-    ->through(function ($fish) {
-        return [
-            'id' => $fish->id,
-            'code' => $fish->code,
-            'bloodline_id' => $fish->bloodline->id ?? null,
-            'bloodline_name' => $fish->bloodline->name ?? null,
-            'variety_id' => $fish->variety->id ?? null,
-            'variety_name' => $fish->variety->name ?? null,
-            'gender' => $fish->gender,
-            'birthDate' => $fish->birthDate,
-            'owner_id' => $fish->user->id ?? null,
-            'owner_name' => $fish->user->name ?? null,
-            'pool_id' => $fish->pool->id ?? null,
-            'pool_name' => $fish->pool->name ?? null,
-        ];
-    });
 
     return Inertia::render('admin/fishes', [
         'fishItems' => $fishes,
-        'recentChanges' => $recentChanges,
-        'recentlyBornFishes' => $recentlyBornFishes,
+        'recentChanges' => Fish::with('user')->whereNotNull('updated_at')->latest('updated_at')->limit(5)->get(),
+        'recentlyBornFishes' => Fish::whereBetween('birthDate', [now()->subDays(7), now()])->latest('birthDate')->get(['id', 'code', 'birthDate']),
         'bloodlines' => Bloodline::select('id', 'name')->get(),
         'varieties' => Variety::select('id', 'name')->get(),
         'users' => \App\Models\User::select('id', 'name')->get(),
         'pools' => Pool::select('id', 'name')->get(),
     ]);
 }
+
 
 public function create () {
 
@@ -107,7 +110,7 @@ public function store(Request $request)
         'recordedDate' => 'required|date',
         'gender' => 'required|in:male,female,unknown',
         'size' => 'required|numeric',
-        'image' => 'nullable|image', // Optional image file, max 2MB
+        'image' => 'nullable|image',
     ]);
 
     $validated['user_id'] = Auth::id();

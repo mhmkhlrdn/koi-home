@@ -1,6 +1,6 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 const Create = () => {
@@ -153,6 +153,10 @@ const Create = () => {
                     <button type="submit" disabled={processing} className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white">
                         {processing ? 'Saving...' : 'Save'}
                     </button>
+                    <Link className="mt-4 ml-4 rounded-lg bg-red-500 px-4 py-2 text-white" href={route('fishes')}>
+                        {' '}
+                        Cancel{' '}
+                    </Link>
                 </form>
             </main>
         </AdminLayout>

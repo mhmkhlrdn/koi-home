@@ -9,6 +9,7 @@ class FishGrowth extends Model
 {
     use HasFactory;
     public $timestamps = false;
+    protected $table = 'fish_growth';
 
     protected $fillable = ['fish_id', 'length', 'recorded_at', 'photoUrl', 'user_id'];
 

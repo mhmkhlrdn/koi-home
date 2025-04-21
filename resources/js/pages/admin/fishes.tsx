@@ -2,7 +2,7 @@
 
 import ButtonLink from '@/components/ui/ButtonLink';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { CircleHelp, Mars, Pencil, Settings, Trash, Venus } from 'lucide-react';
 import { useState } from 'react';
 import MainHeader from '../../components/MainHeader';
@@ -12,8 +12,9 @@ import Modal from './../../components/Modal';
 
 const Fishes = () => {
     const [selectedFish, setSelectedFish] = useState(null);
-    const { fishItems, recentChanges, recentlyBornFishes, bloodlines, varieties, pools, pagination } = usePage().props;
+    const { fishItems, recentChanges, recentlyBornFishes, bloodlines, varieties, pools, pagination, users } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isManageModalOpen, setIsManageModalOpen] = useState(false);
     const { data, setData, put, processing, reset } = useForm({
         id: '',
@@ -22,6 +23,13 @@ const Fishes = () => {
         variety_id: '',
         gender: '',
         birthDate: '',
+        pool_id: '',
+    });
+
+    const [filters, setFilters] = useState({
+        bloodline_id: '',
+        variety_id: '',
+        owner_id: '',
         pool_id: '',
     });
 
@@ -48,9 +56,35 @@ const Fishes = () => {
         setIsManageModalOpen(false);
         reset();
     };
+
     const closeModal = () => {
         setIsModalOpen(false);
         reset();
+    };
+
+    const manageFilterModal = () => {
+        setIsFilterModalOpen(!isFilterModalOpen);
+        reset();
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFilters((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleApply = () => {
+        // Apply filters by redirecting with query parameters
+        router.visit(route('fishes'), {
+            method: 'get',
+            data: filters,
+            preserveScroll: true,
+            preserveState: true,
+        });
+
+        manageFilterModal(); // Close the filter modal
     };
 
     const handleSubmit = (e) => {
@@ -121,7 +155,7 @@ const Fishes = () => {
         <AdminLayout>
             <main className="grid grid-cols-4 gap-4">
                 <div className="col-span-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                    <MainHeader variant="primary" createHref={route('fishes.create')} title="Fish Management" />
+                    <MainHeader variant="primary" onClickFilter={manageFilterModal} createHref={route('fishes.create')} title="Fish Management" />
                     <DataTable columns={columns} data={fishItems.data} actions={renderActions} />
                     <PaginationNav links={fishItems.links} />
                 </div>
@@ -136,6 +170,7 @@ const Fishes = () => {
                 <div className="rounded-2xl border-b-6 border-gray-900 bg-gray-700 p-6"></div>
             </main>
 
+            {/* Edit Modal */}
             <Modal isOpen={isModalOpen} onClose={closeModal} title="Edit Fish">
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <input
@@ -143,11 +178,10 @@ const Fishes = () => {
                         value={data.code}
                         onChange={(e) => setData('code', e.target.value)}
                         placeholder="Fish Code"
-                        className="w-full border p-2"
+                        className="modalInput"
                         required
                     />
-
-                    <select value={data.bloodline_id} onChange={(e) => setData('bloodline_id', e.target.value)} className="w-full border p-2">
+                    <select value={data.bloodline_id} onChange={(e) => setData('bloodline_id', e.target.value)} className="modalInput">
                         <option value="">Select Bloodline</option>
                         {bloodlines.map((b) => (
                             <option key={b.id} value={b.id}>
@@ -155,8 +189,7 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-
-                    <select value={data.variety_id} onChange={(e) => setData('variety_id', e.target.value)} className="w-full border p-2">
+                    <select value={data.variety_id} onChange={(e) => setData('variety_id', e.target.value)} className="modalInput">
                         <option value="">Select Variety</option>
                         {varieties.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -164,22 +197,19 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-
-                    <select value={data.gender} onChange={(e) => setData('gender', e.target.value)} className="w-full border p-2">
+                    <select value={data.gender} onChange={(e) => setData('gender', e.target.value)} className="modalInput">
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                         <option value="unknown">Unknown</option>
                     </select>
-
                     <input
                         type="date"
                         value={data.birthDate}
                         onChange={(e) => setData('birthDate', e.target.value)}
-                        className="w-full border p-2"
+                        className="modalInput"
                         required
                     />
-
-                    <select value={data.pool_id} onChange={(e) => setData('pool_id', e.target.value)} className="w-full border p-2">
+                    <select value={data.pool_id} onChange={(e) => setData('pool_id', e.target.value)} className="modalInput">
                         <option value="">Select Pool</option>
                         {pools.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -187,13 +217,13 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-
                     <button type="submit" className="w-full rounded bg-blue-600 p-2 text-white" disabled={processing}>
                         {processing ? 'Saving...' : 'Save'}
                     </button>
                 </form>
             </Modal>
 
+            {/* Manage Modal */}
             <Modal isOpen={isManageModalOpen} onClose={closeManageModal} title="Manage Fish">
                 <div className="flex gap-x-3 py-4">
                     <ButtonLink
@@ -205,6 +235,47 @@ const Fishes = () => {
                     <ButtonLink classNames="flex-1" variant="primary" label="Breed" />
                     <ButtonLink classNames="flex-1" variant="primary" label="Sell" />
                     <ButtonLink classNames="flex-1" variant="primary" label="Measure" />
+                </div>
+            </Modal>
+
+            {/* Filter Modal */}
+            <Modal isOpen={isFilterModalOpen} onClose={manageFilterModal} title="Filter Data">
+                <div className="flex flex-wrap gap-3 py-4">
+                    <select name="bloodline_id" value={filters.bloodline_id} onChange={handleChange}>
+                        <option value="">All Bloodlines</option>
+                        {bloodlines.map((b) => (
+                            <option key={b.id} value={b.id}>
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select name="variety_id" value={filters.variety_id} onChange={handleChange}>
+                        <option value="">All Varieties</option>
+                        {varieties.map((v) => (
+                            <option key={v.id} value={v.id}>
+                                {v.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select name="owner_id" value={filters.owner_id} onChange={handleChange}>
+                        <option value="">All Owners</option>
+                        {users.map((u) => (
+                            <option key={u.id} value={u.id}>
+                                {u.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select name="pool_id" value={filters.pool_id} onChange={handleChange}>
+                        <option value="">All Pools</option>
+                        {pools.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.name}
+                            </option>
+                        ))}
+                    </select>
+                    <button onClick={handleApply} className="mt-2 rounded bg-blue-500 px-4 py-2 text-white">
+                        Apply Filters
+                    </button>
                 </div>
             </Modal>
         </AdminLayout>
