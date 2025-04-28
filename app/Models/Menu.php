@@ -9,6 +9,7 @@ class Menu extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
     protected $fillable = ['title', 'url', 'icon_tag', 'isEnabled', 'parent_id'];
 
     public function parent()

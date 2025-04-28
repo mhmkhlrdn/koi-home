@@ -18,6 +18,8 @@ const Create = () => {
         image: null,
     });
 
+    const [isCertificate, setIscertificate] = useState(false);
+
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,10 +47,11 @@ const Create = () => {
 
     return (
         <AdminLayout>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <main className="mainWrapper">
                 <MainHeader title="Create New Fish" />
                 <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 bg-gray-700">
                         {/* Fish Table Data */}
                         <div className="flex flex-col rounded-lg bg-gray-600 p-4">
                             <label className="text-lg font-bold text-white">Fish Code</label>
@@ -106,6 +109,7 @@ const Create = () => {
                             />
                             <label className="text-lg font-bold text-white">Gender</label>
                             <select required className="rounded-lg bg-gray-800 px-4 py-2" onChange={(e) => setData('gender', e.target.value)}>
+                                <option value={``}></option>
                                 <option value="unknown">Unknown</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
@@ -145,18 +149,58 @@ const Create = () => {
                             {previewUrl && (
                                 <div className="mt-4">
                                     <label className="font-semibold text-white">Preview:</label>
-                                    <img src={previewUrl} alt="Fish Preview" className="mt-2 h-auto max-w-full rounded-lg border border-gray-400" />
+                                    <img
+                                        src={previewUrl}
+                                        alt="Fish Preview"
+                                        className="mx-auto mt-2 h-auto max-h-128 max-w-128 rounded-lg border border-gray-400"
+                                    />
                                 </div>
                             )}
                         </div>
+                        {isCertificate && (
+                            <div id="certificate" className="bg-white p-8 text-black">
+                                <h2 className="text-center text-2xl font-bold">Fish Identity Certificate</h2>
+                                <p>
+                                    <strong>Code:</strong> {data.code}
+                                </p>
+                                <p>
+                                    <strong>Bloodline:</strong> {bloodlines.find((b) => b.id === data.bloodline_id)?.name || '-'}
+                                </p>
+                                <p>
+                                    <strong>Variety:</strong> {varieties.find((v) => v.id === data.variety_id)?.name || '-'}
+                                </p>
+                                <p>
+                                    <strong>Pool:</strong> {pools.find((p) => p.id === data.pool_id)?.name || '-'}
+                                </p>
+                                <p>
+                                    <strong>Gender:</strong> {data.gender}
+                                </p>
+                                <p>
+                                    <strong>Birth Date:</strong> {data.birthDate}
+                                </p>
+                                <p>
+                                    <strong>Issued Date:</strong> {data.recordedDate}
+                                </p>
+                                <p>
+                                    <strong>Size:</strong> {data.size} cm
+                                </p>
+                                {previewUrl && <img src={previewUrl} alt="Fish" className="mt-4 h-48 w-auto object-contain" />}
+                            </div>
+                        )}
                     </div>
                     <button type="submit" disabled={processing} className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white">
                         {processing ? 'Saving...' : 'Save'}
                     </button>
                     <Link className="mt-4 ml-4 rounded-lg bg-red-500 px-4 py-2 text-white" href={route('fishes')}>
-                        {' '}
-                        Cancel{' '}
+                        Cancel
                     </Link>
+                    <button
+                        onClick={() => setIscertificate(!isCertificate)}
+                        type="button"
+                        className="mt-4 ml-4 rounded-lg bg-green-500 px-4 py-2 text-white"
+                    >
+                        {!isCertificate ? 'Generate Certificiate' : 'Cancel Certificate Generation'}
+                    </button>
                 </form>
             </main>
         </AdminLayout>

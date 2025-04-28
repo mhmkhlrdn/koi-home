@@ -12,7 +12,7 @@ import Modal from './../../components/Modal';
 
 const Fishes = () => {
     const [selectedFish, setSelectedFish] = useState(null);
-    const { fishItems, recentChanges, recentlyBornFishes, bloodlines, varieties, pools, pagination, users } = usePage().props;
+    const { fishItems, recentChanges, recentlyBornFishes, bloodlines, varieties, pools, pagination, users, fishSize } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isManageModalOpen, setIsManageModalOpen] = useState(false);
@@ -31,6 +31,7 @@ const Fishes = () => {
         variety_id: '',
         owner_id: '',
         pool_id: '',
+        search_input: '',
     });
 
     const openModal = (fish) => {
@@ -52,6 +53,8 @@ const Fishes = () => {
         setIsManageModalOpen(true);
     };
 
+    console.log('recentlyBornFishes', recentlyBornFishes);
+    console.log('recentChanges', recentChanges);
     const closeManageModal = () => {
         setIsManageModalOpen(false);
         reset();
@@ -83,7 +86,7 @@ const Fishes = () => {
             preserveScroll: true,
             preserveState: true,
         });
-
+        // console.log(filters);
         manageFilterModal(); // Close the filter modal
     };
 
@@ -107,6 +110,22 @@ const Fishes = () => {
         });
     };
 
+    // console.log(fishSize);
+    const extraInfo = [
+        {
+            key: 'fish_photo',
+            label: 'Photo',
+            render: (item) =>
+                item.fish_photo ? (
+                    <img src={'/' + item.fish_photo} alt="Fish" className="h-auto max-w-64 rounded object-fill" />
+                ) : (
+                    <span className="text-gray-400 italic">No photo</span>
+                ),
+        },
+
+        { key: 'fish_size', label: 'Size (cm)' },
+        { key: 'recorded_at', label: 'Recorded At' },
+    ];
     const columns = [
         { key: 'id', label: 'ID' },
         { key: 'code', label: 'Code' },
@@ -127,6 +146,7 @@ const Fishes = () => {
         { key: 'birthDate', label: 'Birth Date' },
         { key: 'pool_name', label: 'Pool' },
     ];
+
     const changesColumns = [
         { key: 'fish_code', label: 'Fish Code' },
         { key: 'user_name', label: 'Modified By' },
@@ -156,7 +176,7 @@ const Fishes = () => {
             <main className="grid grid-cols-4 gap-4">
                 <div className="col-span-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <MainHeader variant="primary" onClickFilter={manageFilterModal} createHref={route('fishes.create')} title="Fish Management" />
-                    <DataTable columns={columns} data={fishItems.data} actions={renderActions} />
+                    <DataTable extraInfo={extraInfo} columns={columns} data={fishItems.data} actions={renderActions} />
                     <PaginationNav links={fishItems.links} />
                 </div>
                 <div className="col-span-2 rounded-2xl border-b-6 border-gray-900 bg-gray-700 p-6">
@@ -241,7 +261,15 @@ const Fishes = () => {
             {/* Filter Modal */}
             <Modal isOpen={isFilterModalOpen} onClose={manageFilterModal} title="Filter Data">
                 <div className="flex flex-wrap gap-3 py-4">
-                    <select name="bloodline_id" value={filters.bloodline_id} onChange={handleChange}>
+                    <input
+                        className="modalInput"
+                        type="text"
+                        placeholder="Search by Code"
+                        name="search_input"
+                        value={filters.search_input}
+                        onChange={handleChange}
+                    />
+                    <select className="modalInput" name="bloodline_id" value={filters.bloodline_id} onChange={handleChange}>
                         <option value="">All Bloodlines</option>
                         {bloodlines.map((b) => (
                             <option key={b.id} value={b.id}>
@@ -249,7 +277,7 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-                    <select name="variety_id" value={filters.variety_id} onChange={handleChange}>
+                    <select className="modalInput" name="variety_id" value={filters.variety_id} onChange={handleChange}>
                         <option value="">All Varieties</option>
                         {varieties.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -257,7 +285,7 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-                    <select name="owner_id" value={filters.owner_id} onChange={handleChange}>
+                    <select className="modalInput" name="owner_id" value={filters.owner_id} onChange={handleChange}>
                         <option value="">All Owners</option>
                         {users.map((u) => (
                             <option key={u.id} value={u.id}>
@@ -265,7 +293,7 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
-                    <select name="pool_id" value={filters.pool_id} onChange={handleChange}>
+                    <select className="modalInput" name="pool_id" value={filters.pool_id} onChange={handleChange}>
                         <option value="">All Pools</option>
                         {pools.map((p) => (
                             <option key={p.id} value={p.id}>

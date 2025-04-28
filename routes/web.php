@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\CountryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DiseaseController;
 use App\Http\Controllers\FishController;
+use App\Http\Controllers\InformationController;
 use App\Http\Controllers\VarietyController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MenuController;
@@ -41,15 +43,28 @@ Route::get('/login', fn() => Inertia::render('Auth/Login'))->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 
+Route::middleware('guest')->group(function () {
+    Route::get('/register', function () {
+        return Inertia::render('auth/register');
+    })->name('register');
+    Route::post('/register', [LoginController::class, 'register'])->name('createAccount');
+});
+
 Route::put('/kh-admin/fishes/{id}', [FishController::class, 'update'])->name('fishes.update');
 Route::middleware('auth')->group(function () {
     Route::prefix('kh-admin')->group(function (){
+        Route::patch('/information', [InformationController::class, 'update'])->name('info.update');
+        Route::get('/information', [InformationController::class, 'index'])->name('information');
         Route::get('/medicines', [MedicineController::class, 'index'])->name('medicine.index');
         Route::get('/diseases/treatment', [TreatmentController::class, 'index'])->name('treatment.index');
         Route::get('/disease/create', [DiseaseController::class, 'create'])->name('disease.create');
         Route::get('/dashboard', [DashboardController::class, 'index']
         )->name('dashboard');
+        Route::get('/information/country', [CountryController::class, 'index'])->name('country.index');
         Route::get('/diagnosis/create', [DiagnosisController::class, 'create'])->name('diagnosis.create');
+        Route::get('/information/menu', [MenuController::class, 'index'])->name('menu.index');
+        Route::put('/information/menu/{id}/enable', [MenuController::class, 'enable'])->name('enableMenu');
+        Route::put('/information/menu/{id}/disable', [MenuController::class, 'disable'])->name('disableMenu');
         Route::post('/treatment/store', [TreatmentController::class, 'store'])->name('treatment.store');
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
@@ -82,6 +97,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
+
 
 
 

@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
 
     private function getMenus()
     {
-        $menus = Menu::select('id', 'title', 'url', 'icon_tag', 'parent_id')->get();
+        $menus = Menu::where('isEnabled', '=', 1)->select('id', 'title', 'url', 'icon_tag', 'parent_id')->get();
         return $this->buildMenuTree($menus);
     }
 

@@ -37,7 +37,7 @@ class FishController extends Controller
     }
     public function index(Request $request)
 {
-    $query = Fish::with(['bloodline', 'variety', 'user', 'pool']);
+    $query = Fish::with(['bloodline', 'variety', 'user', 'pool', 'latestSize']);
 
     if ($request->bloodline_id) {
         $query->where('bloodline_id', $request->bloodline_id);
@@ -53,6 +53,9 @@ class FishController extends Controller
 
     if ($request->pool_id) {
         $query->where('pool_id', $request->pool_id);
+    }
+    if ($request->search_input) {
+        $query->where('code', 'like', '%' . $request->search_input . '%' );
     }
 
     $fishes = $query->paginate(10)->appends($request->only([
@@ -73,11 +76,29 @@ class FishController extends Controller
         'owner_name' => $fish->user->name ?? null,
         'pool_id' => $fish->pool->id ?? null,
         'pool_name' => $fish->pool->name ?? null,
+        'fish_photo' => $fish->latestSize->photoUrl ?? null,
+        'fish_size' => $fish->latestSize->length ?? null,
+        'recorded_at' => $fish->latestSize->recorded_at ?? null
     ]);
 
+    $recentChanges = Fish::with('user')
+    ->whereNotNull('updated_at')
+    ->latest('updated_at')
+    ->limit(5)
+    ->get()
+    ->map(fn ($fish) => [
+        'fish_code' => $fish->code,
+        'user_name' => $fish->user->name ?? 'Unknown',
+        'modified_at' => $fish->updated_at->format('Y-m-d H:i:s'),
+    ]);
+
+
+
     return Inertia::render('admin/fishes', [
+
+
         'fishItems' => $fishes,
-        'recentChanges' => Fish::with('user')->whereNotNull('updated_at')->latest('updated_at')->limit(5)->get(),
+        'recentChanges' => $recentChanges,
         'recentlyBornFishes' => Fish::whereBetween('birthDate', [now()->subDays(7), now()])->latest('birthDate')->get(['id', 'code', 'birthDate']),
         'bloodlines' => Bloodline::select('id', 'name')->get(),
         'varieties' => Variety::select('id', 'name')->get(),

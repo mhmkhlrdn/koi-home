@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Customer;
+use Illuminate\Validation\Rules\Password;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
@@ -18,12 +20,10 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        // Try logging in as a User
         if (Auth::guard('web')->attempt($request->only('email', 'password'))) {
             return redirect()->intended('/kh-admin/dashboard');
         }
 
-        // Try logging in as a Customer
         $customer = Customer::where('email', $request->email)->first();
         if ($customer && Hash::check($request->password, $customer->password)) {
             Auth::guard('web')->loginUsingId($customer->id);
@@ -37,5 +37,24 @@ class LoginController extends Controller
     {
         Auth::logout();
         return redirect('/');
+    }
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'admin',
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->intended('/');
     }
 }

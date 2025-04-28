@@ -284,6 +284,10 @@
         background: transparent;
     }
 
+    .mainWrapper {
+        @apply rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4;
+    }
+
     .modalInput {
         @apply w-full rounded-md border bg-gray-800 p-2;
     }

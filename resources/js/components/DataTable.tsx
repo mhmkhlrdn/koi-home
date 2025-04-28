@@ -9,13 +9,27 @@ interface Column {
 interface DataTableProps {
     classStyles?: string;
     columns: Column[];
+    extraInfo?: Column[];
     data: any[];
     actions?: (item: any) => React.ReactNode;
 }
 
-const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actions }) => {
+const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actions, extraInfo }) => {
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+    const toggleRow = (id: number) => {
+        setExpandedRows((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
 
     const handleSort = (key: string) => {
         if (sortKey === key) {
@@ -61,18 +75,35 @@ const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actio
                 </thead>
                 <tbody>
                     {sortedData.map((item) => (
-                        <tr key={item.id} className="mx-auto border-t text-center">
-                            {columns.map((col) => (
-                                <td key={col.key} className="border p-3">
-                                    {col.render ? col.render(item) : item[col.key]}
-                                </td>
-                            ))}
-                            {actions && (
-                                <td className="border p-3">
-                                    <div className="flex justify-center gap-2">{actions(item)}</div>
-                                </td>
+                        <React.Fragment key={item.id}>
+                            <tr className="mx-auto cursor-pointer border-t text-center" onClick={() => toggleRow(item.id)}>
+                                {columns.map((col) => (
+                                    <td key={col.key} className="border p-3">
+                                        {col.render ? col.render(item) : item[col.key]}
+                                    </td>
+                                ))}
+                                {actions && (
+                                    <td className="border p-3">
+                                        <div className="flex justify-center gap-2">{actions(item)}</div>
+                                    </td>
+                                )}
+                            </tr>
+
+                            {extraInfo && expandedRows.has(item.id) && (
+                                <tr>
+                                    <td colSpan={actions ? columns.length + 1 : columns.length} className="border bg-gray-800 px-4 py-0 text-white">
+                                        <div className={`flex justify-between overflow-hidden`}>
+                                            {extraInfo.map((info) => (
+                                                <div className="py-3 text-white" key={info.key}>
+                                                    <h1>{info.label}:</h1>
+                                                    <p>{info.render ? info.render(item) : item[info.key]}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </td>
+                                </tr>
                             )}
-                        </tr>
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>

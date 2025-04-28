@@ -34,6 +34,10 @@ const SickFishes = () => {
         applyTreatment: { isOpen: false },
     });
 
+    const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
+
+    // Calculate time left for each treated fish
+
     useEffect(() => {
         if (selectedFish) {
             setData('fish_id', selectedFish.id);
@@ -150,6 +154,7 @@ const SickFishes = () => {
                     <div className="grid grid-cols-2 gap-4 py-4">
                         <TreatmentSection
                             title="Available Treatments"
+                            selectedFish={selectedFish}
                             treatments={availableTreatment.filter((t) => t.disease_id === selectedFish.disease_id)}
                             className="text-green-400"
                             isAvailable={true}
@@ -172,11 +177,12 @@ const SickFishes = () => {
 type TreatmentSectionProps = {
     title: string;
     treatments: any[];
+    selectedFish?: Fish;
     className: string;
     isAvailable: boolean;
 };
 
-const TreatmentSection = ({ title, treatments, className, isAvailable }: TreatmentSectionProps) => (
+const TreatmentSection = ({ title, treatments, className, isAvailable, selectedFish }: TreatmentSectionProps) => (
     <div>
         <h3 className={`text-lg font-semibold ${className}`}>{title}</h3>
         <div className="grid gap-2">
@@ -187,7 +193,7 @@ const TreatmentSection = ({ title, treatments, className, isAvailable }: Treatme
                         onClick={() => {
                             router.post('/kh-admin/fishes/treatment', {
                                 Treatment: treatment.id,
-                                Fish: treatment.id,
+                                Fish: selectedFish.id,
                             });
                         }}
                         className="w-full rounded-lg bg-gray-800 p-3 text-white hover:bg-green-500"

@@ -45,4 +45,11 @@ class Fish extends Model
     {
         return $this->hasMany(FishGrowth::class);
     }
+
+    // In Fish.php
+public function latestSize()
+{
+    return $this->hasOne(FishGrowth::class)->latestOfMany('recorded_at');
+}
+
 }
