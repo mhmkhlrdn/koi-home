@@ -25,7 +25,7 @@ Route::post('/kh-admin/diagnosis', [DiagnosisController::class, 'store'])->name(
 
 Route::get('/kh-admin/api/treatments', function (Request $request) {
     try {
-        $diseaseId = $request->query('disease_id'); // ✅ Correct way
+        $diseaseId = $request->query('disease_id');
 
         if (!$diseaseId) {
             return response()->json(['error' => 'disease_id is required'], 400);
@@ -69,7 +69,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
         Route::prefix('fishes')->group(function (){
+            Route::get('/export-excel', [FishController::class, 'exportExcel'])->name('fishes.excel');
+            Route::get('/cetak-pdf', [FishController::class, 'cetak'])->name('fishes.cetak');
             Route::get('/create', [FishController::class, 'create'])->name('fishes.create');
+            Route::get('/measure', [FishController::class, 'measure'])->name('fishes.measure');
+            Route::post('/measure/store', [FishController::class, 'storeMeasure'])->name('measurement.store');
             Route::post('/store', [FishController::class, 'store'])->name('fishes.store');
             Route::get('/variety', [VarietyController::class, 'index'])->name('variety');
             Route::post('/variety/store', [VarietyController::class, 'store'])->name('variety.store');

@@ -1,7 +1,7 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const Create = () => {
     const { bloodlines, varieties, pools } = usePage().props;
@@ -45,6 +45,41 @@ const Create = () => {
         post(route('fishes.store'), payload);
     };
 
+    const [autoGenerateCode, setAutoGenerateCode] = useState(true);
+
+    const generateCode = () => {
+        if (!data.variety_id || !data.recordedDate) return;
+
+        const variety = varieties.find((v) => v.id === data.variety_id);
+        const bloodline = bloodlines.find((b) => b.id === data.bloodline_id);
+        const pool = pools.find((p) => p.id === data.pool_id);
+
+        const farmName = pool?.name || 'Farm';
+
+        const varietyPart = (variety?.name?.substring(0, 3) || 'VAR').toUpperCase();
+        const bloodlinePart = bloodline
+            ? (bloodline.name[0] + bloodline.name.slice(-1)).toUpperCase()
+            : (farmName[0] + farmName.slice(-1)).toUpperCase();
+
+        const date = new Date(data.birthDate);
+        if (isNaN(date.getTime())) return;
+
+        const year = date.getFullYear().toString().slice(-2);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+
+        // Simulated batch number (000 for simplicity). You can fetch actual count from backend via useEffect + API.
+        const batch = '001';
+
+        return `${varietyPart}${bloodlinePart}${year}${month}${batch}`;
+    };
+
+    useEffect(() => {
+        if (autoGenerateCode) {
+            const newCode = generateCode();
+            if (newCode) setData('code', newCode);
+        }
+    }, [autoGenerateCode, data.variety_id, data.bloodline_id, data.recordedDate, data.pool_id]);
+
     return (
         <AdminLayout>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -54,13 +89,27 @@ const Create = () => {
                     <div className="grid grid-cols-2 gap-4 bg-gray-700">
                         {/* Fish Table Data */}
                         <div className="flex flex-col rounded-lg bg-gray-600 p-4">
-                            <label className="text-lg font-bold text-white">Fish Code</label>
+                            <div className="flex justify-between gap-2">
+                                <label className="text-lg font-bold text-white">Fish Code</label>
+                                <label className="text-sm text-white">
+                                    <input
+                                        type="checkbox"
+                                        checked={autoGenerateCode}
+                                        onChange={() => setAutoGenerateCode(!autoGenerateCode)}
+                                        className="mr-2"
+                                    />
+                                    Auto-generate code
+                                </label>
+                            </div>
                             <input
                                 required
+                                disabled={autoGenerateCode}
                                 className="rounded-lg bg-gray-800 px-4 py-2"
+                                value={data.code}
                                 onChange={(e) => setData('code', e.target.value)}
                                 type="text"
                             />
+
                             <label className="text-lg font-bold text-white">Fish Bloodline</label>
                             <select
                                 required

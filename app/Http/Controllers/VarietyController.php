@@ -9,7 +9,7 @@ use Inertia\Inertia;
 class VarietyController extends Controller
 {
     public function index () {
-        $fishVariety = Variety::withCount(['fishes'])->paginate(10);
+        $fishVariety = Variety::withCount(['fishes'])->get();
         return Inertia::render('admin/fish/Variety', ['fishVariety' => $fishVariety]);
     }
     public function store (Request $request) {

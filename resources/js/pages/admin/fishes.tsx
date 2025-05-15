@@ -123,8 +123,16 @@ const Fishes = () => {
                 ),
         },
 
-        { key: 'fish_size', label: 'Size (cm)' },
-        { key: 'recorded_at', label: 'Recorded At' },
+        {
+            key: 'fish_size',
+            label: 'Size (cm)',
+            render: (item) => (item.fish_size ? <h1>{item.fish_size}</h1> : <span className="text-gray-400 italic">No data</span>),
+        },
+        {
+            key: 'recorded_at',
+            label: 'Recorded At',
+            render: (item) => (item.recorded_at ? <h1>{item.recorded_at}</h1> : <span className="text-gray-400 italic">No data</span>),
+        },
     ];
     const columns = [
         { key: 'id', label: 'ID' },
@@ -175,7 +183,13 @@ const Fishes = () => {
         <AdminLayout>
             <main className="grid grid-cols-4 gap-4">
                 <div className="col-span-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                    <MainHeader variant="primary" onClickFilter={manageFilterModal} createHref={route('fishes.create')} title="Fish Management" />
+                    <MainHeader
+                        variant="primary"
+                        onClickFilter={manageFilterModal}
+                        printRoute={route('fishes.cetak')}
+                        createHref={route('fishes.create')}
+                        title="Fish Management"
+                    />
                     <DataTable extraInfo={extraInfo} columns={columns} data={fishItems.data} actions={renderActions} />
                     <PaginationNav links={fishItems.links} />
                 </div>
@@ -254,7 +268,7 @@ const Fishes = () => {
                     />
                     <ButtonLink classNames="flex-1" variant="primary" label="Breed" />
                     <ButtonLink classNames="flex-1" variant="primary" label="Sell" />
-                    <ButtonLink classNames="flex-1" variant="primary" label="Measure" />
+                    <ButtonLink classNames="flex-1" href={`/kh-admin/fishes/measure?fish_id=${selectedFish?.id}`} variant="primary" label="Measure" />
                 </div>
             </Modal>
 

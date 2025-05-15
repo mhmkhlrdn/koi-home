@@ -24,7 +24,7 @@ const Variety = () => {
     const { fishVariety }: any = usePage().props;
     console.log(fishVariety.data);
     const formatVarietyData = () => {
-        return fishVariety.data.map((item: any) => ({
+        return fishVariety.map((item: any) => ({
             id: item.id,
             name: item.name,
             fishes_count: item.fishes_count,

@@ -76,7 +76,10 @@ const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actio
                 <tbody>
                     {sortedData.map((item) => (
                         <React.Fragment key={item.id}>
-                            <tr className="mx-auto cursor-pointer border-t text-center" onClick={() => toggleRow(item.id)}>
+                            <tr
+                                className={`mx-auto border-t text-center hover:bg-gray-700 ${extraInfo ? 'cursor-pointer' : ''}`}
+                                onClick={() => toggleRow(item.id)}
+                            >
                                 {columns.map((col) => (
                                     <td key={col.key} className="border p-3">
                                         {col.render ? col.render(item) : item[col.key]}

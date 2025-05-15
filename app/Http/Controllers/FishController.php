@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\FishesExport;
 use App\Models\Bloodline;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,11 +10,47 @@ use App\Models\Fish;
 use App\Models\FishGrowth;
 use App\Models\Pool;
 use App\Models\Variety;
+use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FishController extends Controller
 {
+
+    public function storeMeasure(Request $request){
+$validated = $request->validate(
+    ['fish_id' => 'required|numeric',
+    'fish_code' => 'required|string',
+    'length' => 'number',
+    'weight' => 'number',
+    'recorded_at' => 'date'
+    ]
+);
+FishGrowth::create($validated);
+    }
+
+public function measure(Request $request){
+    $fishId = $request->query('fish_id');
+    if (!$fishId){
+        return redirect()->route('dashboard')->withErrors(['error'=> 'No fish selected for measurement.']);
+    }
+    return Inertia::render('admin/measurement/create', [
+        'fish' => Fish::with('growthRecords', 'variety', 'bloodline', 'pool')->find($fishId)
+    ]);
+}
+
+    public function exportExcel() {
+        return Excel::download(new FishesExport, 'fishes.xlsx');
+    }
+
+public function cetak () {
+    $Fish = Fish::with('variety', 'bloodline', 'user', 'pool')->get();
+
+    	$pdf = FacadePdf::loadview('cetak-pdf',['fish'=>$Fish]);
+    	return $pdf->download('laporan-fish-pdf');
+}
+
     public function update(Request $request, $id)
     {
     $fish = Fish::findOrFail($id);
@@ -131,6 +168,7 @@ public function store(Request $request)
         'recordedDate' => 'required|date',
         'gender' => 'required|in:male,female,unknown',
         'size' => 'required|numeric',
+        'weight' => 'required|numeric',
         'image' => 'nullable|image',
     ]);
 
@@ -148,6 +186,7 @@ public function store(Request $request)
     // Save fish growth
     FishGrowth::create([
         'length' => $validated['size'],
+        'weight' => $validated['weight'],
         'recorded_at' => $validated['recordedDate'],
         'photoUrl' => $imagePath,
         'user_id' => Auth::id(),
