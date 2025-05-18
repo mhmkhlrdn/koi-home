@@ -1,10 +1,10 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
-import { canvasPreview } from '@/types/canvasPreview';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import ReactCrop, { centerCrop, Crop, makeAspectCrop, PixelCrop } from 'react-image-crop';
+import { centerCrop, Crop, makeAspectCrop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import FishImageUpload from '../../../components/FishImageUpload';
 
 function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
     return centerCrop(
@@ -47,61 +47,6 @@ const Create = () => {
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.addEventListener('load', () => {
-                setImgSrc(reader.result?.toString() || '');
-            });
-            reader.readAsDataURL(file);
-        }
-    };
-    function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-        const { width, height } = e.currentTarget;
-        setCrop(centerAspectCrop(width, height, aspect));
-    }
-
-    const handleCropComplete = (crop: PixelCrop) => {
-        setCompletedCrop(crop);
-    };
-
-    const handleAcceptCrop = async () => {
-        if (completedCrop?.width && completedCrop?.height && imgRef.current && previewCanvasRef.current) {
-            // We use canvasPreview as it's much faster than imgPreview.
-            canvasPreview(imgRef.current, previewCanvasRef.current, completedCrop);
-
-            // Convert canvas to blob
-            previewCanvasRef.current.toBlob(
-                (blob) => {
-                    if (blob) {
-                        const croppedFile = new File([blob], 'cropped-image.jpg', {
-                            type: 'image/jpeg',
-                        });
-                        setData('image', croppedFile);
-                        setPreviewUrl(URL.createObjectURL(blob));
-                        setImgSrc(''); // Close the crop modal
-                    }
-                },
-                'image/jpeg',
-                0.9,
-            );
-        }
-    };
-
-    // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const file = e.target.files?.[0];
-    //     if (file && file.type.startsWith('image/')) {
-    //         setData('image', file);
-    //         const url = URL.createObjectURL(file);
-    //         setPreviewUrl(url);
-    //         console.log(file);
-    //     } else {
-    //         setData('image', null);
-    //         setPreviewUrl(null);
-    //     }
-    // };
-
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const payload = {
@@ -131,6 +76,10 @@ const Create = () => {
             return ''; // Return a default value if there's an error
         }
     }
+
+    const handleImage = (data) => {
+        setData('image', data);
+    };
 
     const generateCode = (count: string) => {
         if (!data.variety_id || !data.birthDate) return;
@@ -288,61 +237,7 @@ const Create = () => {
                                 onChange={(e) => setData('recordedDate', e.target.value)}
                                 type="date"
                             />
-                            <div className="flex flex-col rounded-lg bg-gray-600 p-4">
-                                <label className="text-lg font-bold text-white">Fish Image</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="rounded-lg bg-gray-800 px-4 py-2 text-white"
-                                    onChange={handleImageChange}
-                                />
-
-                                {/* Image cropping modal */}
-                                {imgSrc && (
-                                    <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black">
-                                        <div className="max-w-2xl rounded-lg bg-gray-800 p-4">
-                                            <h2 className="mb-4 text-xl font-bold text-white">Crop Image (9:16 aspect ratio)</h2>
-                                            <ReactCrop
-                                                crop={crop}
-                                                onChange={(c) => setCrop(c)}
-                                                onComplete={handleCropComplete}
-                                                aspect={aspect}
-                                                className="max-h-[80vh]"
-                                            >
-                                                <img ref={imgRef} alt="Crop me" src={imgSrc} onLoad={onImageLoad} className="max-h-[70vh]" />
-                                            </ReactCrop>
-                                            <div className="mt-4 flex justify-end gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setImgSrc('')}
-                                                    className="rounded bg-red-500 px-4 py-2 text-white"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button type="button" onClick={handleAcceptCrop} className="rounded bg-blue-500 px-4 py-2 text-white">
-                                                    Accept Crop
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Hidden canvas for cropping */}
-                                <div className="hidden">
-                                    <canvas ref={previewCanvasRef} />
-                                </div>
-
-                                {previewUrl && !imgSrc && (
-                                    <div className="mt-4">
-                                        <label className="font-semibold text-white">Preview:</label>
-                                        <img
-                                            src={previewUrl}
-                                            alt="Fish Preview"
-                                            className="mx-auto mt-2 h-auto max-h-128 max-w-128 rounded-lg border border-gray-400"
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            <FishImageUpload Img={handleImage} />
                         </div>
                         {isCertificate && (
                             <div id="certificate" className="bg-white p-8 text-black">
