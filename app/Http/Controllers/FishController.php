@@ -18,6 +18,26 @@ use Maatwebsite\Excel\Facades\Excel;
 class FishController extends Controller
 {
 
+    public function countByMonth(int $year, int $month)
+    {
+        // Ensure month is always two digits so 3 => 03 (optional)
+        $month = str_pad($month, 2, '0', STR_PAD_LEFT);
+
+        $count = Fish::whereYear('birthDate', $year)
+                     ->whereMonth('birthDate', $month)
+                     ->count();
+
+                     $countFormatted = str_pad($count, 3, '0', STR_PAD_LEFT);
+                     $nextCountFormatted = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'year'  => $year,
+            'month' => $month,
+            'count' => $countFormatted,
+            'nextCount' => $nextCountFormatted
+        ]);
+    }
+
     public function storeMeasure(Request $request){
 $validated = $request->validate(
     ['fish_id' => 'required|numeric',
@@ -175,7 +195,15 @@ public function store(Request $request)
     $validated['user_id'] = Auth::id();
 
     // Save fish
-    $fish = Fish::create($validated);
+    $fish = Fish::create([
+        'code' => $validated['code'],
+        'bloodline_id' => $validated['bloodline_id'],
+        'variety_id' => $validated['variety_id'],
+        'pool_id' => $validated['pool_id'],
+        'birthDate' => $validated['birthDate'],
+        'gender' => $validated['gender'],
+        'user_id' => Auth::id(),
+    ]);
 
     // Handle uploaded image
     $imagePath = null;

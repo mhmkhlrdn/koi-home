@@ -7,6 +7,7 @@ use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DiseaseController;
 use App\Http\Controllers\FishController;
 use App\Http\Controllers\InformationController;
+use App\Http\Controllers\SizeController;
 use App\Http\Controllers\VarietyController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MenuController;
@@ -69,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
 
         Route::prefix('fishes')->group(function (){
+            Route::get('/count/{year}/{month}', [FishController::class, 'countByMonth'])->whereNumber('year')->whereNumber("month")->name("fish.count");
             Route::get('/export-excel', [FishController::class, 'exportExcel'])->name('fishes.excel');
             Route::get('/cetak-pdf', [FishController::class, 'cetak'])->name('fishes.cetak');
             Route::get('/create', [FishController::class, 'create'])->name('fishes.create');
@@ -84,6 +86,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/sickfishes/recovery', [SickController::class, 'recovery'])->name('fish.recovery');
             Route::post("/treatment", [TreatmentController::class, 'treat'])->name('treatment.treat');
             Route::post("/treatment/treated", [TreatmentController::class, 'treated'])->name('treatment.treated');
+            Route::get("/growth", [SizeController::class, "index"])->name("fish.growth");
             });
         Route::get('/pools', function(){
             return Inertia::render('admin/pools');

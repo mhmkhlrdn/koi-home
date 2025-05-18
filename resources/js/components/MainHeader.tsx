@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ListFilter, Plus } from 'lucide-react';
+import { ListFilter, Plus, Printer } from 'lucide-react';
 
 const MainHeader = ({ title, variant, createHref, styleClass, onClickCreate, onClickFilter, printRoute }: any) => {
     //variant : primary = both buttons; filter = only filter; create = only create;
@@ -9,7 +9,7 @@ const MainHeader = ({ title, variant, createHref, styleClass, onClickCreate, onC
             <div className="flex">
                 {printRoute && (
                     <a className="flex items-center gap-2 rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700" href={printRoute}>
-                        Print
+                        <Printer className="h-5 w-5" /> Print
                     </a>
                 )}
                 <button

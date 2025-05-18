@@ -1,0 +1,4 @@
+1. Create a supplies page and menu
+2. Move medicines into the supplies category
+3. Add feeds subcategory of supplies
+4. Add 

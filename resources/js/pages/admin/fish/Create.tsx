@@ -15,6 +15,7 @@ const Create = () => {
         recordedDate: '',
         gender: '',
         size: '',
+        weight: '',
         image: null,
     });
 
@@ -28,6 +29,7 @@ const Create = () => {
             setData('image', file);
             const url = URL.createObjectURL(file);
             setPreviewUrl(url);
+            console.log(file);
         } else {
             setData('image', null);
             setPreviewUrl(null);
@@ -41,14 +43,31 @@ const Create = () => {
             size: parseFloat(data.size.toString()) || 0,
         };
 
-        console.log('Submitting form data:', payload);
-        post(route('fishes.store'), payload);
+        try {
+            console.log('Submitting form data:', payload);
+            post(route('fishes.store'), payload);
+        } catch (error) {
+            console.error(error);
+        }
     };
-
+    const now = new Date();
+    const [batchCount, setBatchCount] = useState('');
     const [autoGenerateCode, setAutoGenerateCode] = useState(true);
+    async function getBatchCount() {
+        const y = data.birthDate.slice(0, 4) ?? now.getFullYear();
+        const m = data.birthDate.slice(5, 7) ?? now.getMonth() + 1;
+        try {
+            const response = await fetch(`http://koi-home.test/kh-admin/fishes/count/${y}/${m}`);
+            const data = await response.json();
+            return data.nextCount; // Return the count instead of setting state
+        } catch (err) {
+            console.error(err);
+            return ''; // Return a default value if there's an error
+        }
+    }
 
-    const generateCode = () => {
-        if (!data.variety_id || !data.recordedDate) return;
+    const generateCode = (count: string) => {
+        if (!data.variety_id || !data.birthDate) return;
 
         const variety = varieties.find((v) => v.id === data.variety_id);
         const bloodline = bloodlines.find((b) => b.id === data.bloodline_id);
@@ -67,18 +86,19 @@ const Create = () => {
         const year = date.getFullYear().toString().slice(-2);
         const month = String(date.getMonth() + 1).padStart(2, '0');
 
-        // Simulated batch number (000 for simplicity). You can fetch actual count from backend via useEffect + API.
-        const batch = '001';
-
-        return `${varietyPart}${bloodlinePart}${year}${month}${batch}`;
+        return `${varietyPart}${bloodlinePart}${year}${month}${count}`;
     };
 
     useEffect(() => {
-        if (autoGenerateCode) {
-            const newCode = generateCode();
-            if (newCode) setData('code', newCode);
+        if (autoGenerateCode && data.birthDate) {
+            const generateCodeAsync = async () => {
+                const count = await getBatchCount();
+                const newCode = generateCode(count); // Pass the count directly
+                if (newCode) setData('code', newCode);
+            };
+            generateCodeAsync();
         }
-    }, [autoGenerateCode, data.variety_id, data.bloodline_id, data.recordedDate, data.pool_id]);
+    }, [autoGenerateCode, data.variety_id, data.bloodline_id, data.birthDate, data.pool_id]);
 
     return (
         <AdminLayout>
@@ -166,7 +186,7 @@ const Create = () => {
                         </div>
                         {/* Fish Growth Table Data */}
                         <div className="flex flex-col rounded-lg bg-gray-600 p-4">
-                            <label className="text-lg font-bold text-white">Fish Size (cm)</label>
+                            <label className="text-lg font-bold text-white">Fish Length (cm)</label>
                             <input
                                 required
                                 type="text"
@@ -177,6 +197,20 @@ const Create = () => {
                                     const value = e.target.value;
                                     if (/^\d*\.?\d*$/.test(value)) {
                                         setData('size', value);
+                                    }
+                                }}
+                            />
+                            <label className="text-lg font-bold text-white">Fish Weight (g)</label>
+                            <input
+                                required
+                                type="text"
+                                inputMode="decimal"
+                                className="rounded-lg bg-gray-800 px-4 py-2 text-white"
+                                value={data.weight}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d*\.?\d*$/.test(value)) {
+                                        setData('weight', value);
                                     }
                                 }}
                             />
@@ -217,9 +251,6 @@ const Create = () => {
                                 </p>
                                 <p>
                                     <strong>Variety:</strong> {varieties.find((v) => v.id === data.variety_id)?.name || '-'}
-                                </p>
-                                <p>
-                                    <strong>Pool:</strong> {pools.find((p) => p.id === data.pool_id)?.name || '-'}
                                 </p>
                                 <p>
                                     <strong>Gender:</strong> {data.gender}

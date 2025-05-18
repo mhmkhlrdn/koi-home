@@ -77,9 +77,8 @@ const Fishes = () => {
             [name]: value,
         }));
     };
-
+    console.log('check ths', fishItems);
     const handleApply = () => {
-        // Apply filters by redirecting with query parameters
         router.visit(route('fishes'), {
             method: 'get',
             data: filters,
