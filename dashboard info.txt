@@ -1,0 +1,22 @@
+fishes
+
+1. Fishes added/born per day/month/year
+2. Ratio of gender (pie chart)
+3. Ratio of variety (pie chart)
+
+fish_diseases
+
+1. Number of fishes diagnosed per day/month/year
+2. Ratio of diseases that infected the fish (pie chart)
+3. 2d graph for each diseases with the dates and frequency of infection
+4. Pie chart of fishes that have and have not recovered
+5. Details of fishes that have suffered for a long time
+
+fish_growth
+
+1. Details of fishes size that haven't been updated in a long time/dont have measurements yet
+2. Fish that have decreased in weight/length
+
+fish_treatments
+
+1. The amount of medicine supplies used up per day/month/year

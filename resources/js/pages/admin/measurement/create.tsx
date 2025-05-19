@@ -1,21 +1,28 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { useForm, usePage } from '@inertiajs/react';
+import FishImageUpload from '../../../components/FishImageUpload';
 import SecondaryHeader from '../../../components/SecondaryHeader';
 
 const MeasurementCreate = ({ fish }) => {
     const { fish_code: fishCodeFromURL } = usePage().props;
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         fish_id: fish?.id || '',
         fish_code: fish?.code || fishCodeFromURL || '',
         length: '',
         weight: '',
         recorded_at: '',
+        image: '',
     });
+
+    const handleImage = (data) => {
+        setData('image', data);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('measurement.store'), { preserveScroll: true });
+        post(route('measurement.store'), { preserveScroll: true, onSuccess: () => reset() });
+        console.log(data);
     };
 
     return (
@@ -100,6 +107,8 @@ const MeasurementCreate = ({ fish }) => {
                                 {errors.recorded_at && <p className="text-md text-red-400">{errors.recorded_at}</p>}
                             </div>
 
+                            <FishImageUpload Img={handleImage} />
+
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
@@ -114,22 +123,24 @@ const MeasurementCreate = ({ fish }) => {
                     <div className="rounded-lg bg-gray-900 p-4 shadow-inner">
                         <h2 className="mb-4 border-b border-gray-600 pb-2 text-xl font-semibold">Growth Records</h2>
                         {fish.growth_records?.length > 0 ? (
-                            <ul className="space-y-3">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {fish.growth_records.map((record) => (
-                                    <li key={record.id} className="flex items-center space-x-3">
-                                        <img src={`/${record.photoUrl}`} alt="Growth" className="h-12 w-12 rounded object-cover shadow" />
-                                        <div className="text-lg">
-                                            <p>
+                                    <div key={record.id} className="flex flex-col rounded-lg border border-gray-700 p-4">
+                                        <div className="aspect-[9/16] overflow-hidden rounded">
+                                            <img src={`/${record.photoUrl}`} alt="Growth Record" className="h-full w-full object-cover" />
+                                        </div>
+                                        <div className="mt-3 space-y-1">
+                                            <p className="text-lg">
                                                 <span className="font-medium">Length:</span> {record.length} cm
                                             </p>
-                                            <p>
+                                            <p className="text-lg">
                                                 <span className="font-medium">Weight:</span> {record.weight} g
                                             </p>
-                                            <p className="text-md text-gray-400"> {record.recorded_at}</p>
+                                            <p className="text-sm text-gray-400">{new Date(record.recorded_at).toLocaleString()}</p>
                                         </div>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         ) : (
                             <p className="text-lg text-gray-400">No growth records yet.</p>
                         )}

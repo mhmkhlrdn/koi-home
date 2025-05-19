@@ -1,33 +1,11 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { centerCrop, Crop, makeAspectCrop, PixelCrop } from 'react-image-crop';
+import { useEffect, useState } from 'react';
 import 'react-image-crop/dist/ReactCrop.css';
 import FishImageUpload from '../../../components/FishImageUpload';
 
-function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
-    return centerCrop(
-        makeAspectCrop(
-            {
-                unit: '%',
-                width: 90,
-            },
-            aspect,
-            mediaWidth,
-            mediaHeight,
-        ),
-        mediaWidth,
-        mediaHeight,
-    );
-}
 const Create = () => {
-    const [imgSrc, setImgSrc] = useState('');
-    const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-    const imgRef = useRef<HTMLImageElement>(null);
-    const [crop, setCrop] = useState<Crop>();
-    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-    const aspect = 9 / 16;
     const { bloodlines, varieties, pools } = usePage().props;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -62,7 +40,6 @@ const Create = () => {
         }
     };
     const now = new Date();
-    const [batchCount, setBatchCount] = useState('');
     const [autoGenerateCode, setAutoGenerateCode] = useState(true);
     async function getBatchCount() {
         const y = data.birthDate.slice(0, 4) ?? now.getFullYear();
@@ -70,10 +47,10 @@ const Create = () => {
         try {
             const response = await fetch(`http://koi-home.test/kh-admin/fishes/count/${y}/${m}`);
             const data = await response.json();
-            return data.nextCount; // Return the count instead of setting state
+            return data.nextCount;
         } catch (err) {
             console.error(err);
-            return ''; // Return a default value if there's an error
+            return '';
         }
     }
 

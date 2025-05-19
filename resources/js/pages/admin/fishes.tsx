@@ -124,8 +124,13 @@ const Fishes = () => {
 
         {
             key: 'fish_size',
-            label: 'Size (cm)',
+            label: 'Length (cm)',
             render: (item) => (item.fish_size ? <h1>{item.fish_size}</h1> : <span className="text-gray-400 italic">No data</span>),
+        },
+        {
+            key: 'fish_weight',
+            label: 'Weight (g)',
+            render: (item) => (item.fish_weight ? <h1>{item.fish_weight}</h1> : <span className="text-gray-400 italic">No data</span>),
         },
         {
             key: 'recorded_at',

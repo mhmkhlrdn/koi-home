@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/information/menu/{id}/disable', [MenuController::class, 'disable'])->name('disableMenu');
         Route::post('/treatment/store', [TreatmentController::class, 'store'])->name('treatment.store');
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
+        Route::get('/dashboard/fish-statistics', [DashboardController::class, 'fishStatistics']);
 
         Route::prefix('fishes')->group(function (){
             Route::get('/count/{year}/{month}', [FishController::class, 'countByMonth'])->whereNumber('year')->whereNumber("month")->name("fish.count");

@@ -41,13 +41,26 @@ class FishController extends Controller
     public function storeMeasure(Request $request){
 $validated = $request->validate(
     ['fish_id' => 'required|numeric',
-    'fish_code' => 'required|string',
-    'length' => 'number',
-    'weight' => 'number',
-    'recorded_at' => 'date'
+    'length' => 'numeric',
+    'weight' => 'numeric',
+    'recorded_at' => 'date',
+    'image' => "nullable|image",
     ]
 );
-FishGrowth::create($validated);
+
+ $imagePath = null;
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('fish_images', 'public');
+    }
+
+FishGrowth::create([
+    'fish_id' => $validated['fish_id'],
+    'length' => $validated['length'],
+    'weight' => $validated['weight'],
+    'photoUrl' => $imagePath,
+    'recorded_at' => $validated['recorded_at'],
+    'user_id' => Auth::id(),
+]);
     }
 
 public function measure(Request $request){
@@ -135,6 +148,7 @@ public function cetak () {
         'pool_name' => $fish->pool->name ?? null,
         'fish_photo' => $fish->latestSize->photoUrl ?? null,
         'fish_size' => $fish->latestSize->length ?? null,
+        'fish_weight' => $fish->latestSize->weight ?? null,
         'recorded_at' => $fish->latestSize->recorded_at ?? null
     ]);
 

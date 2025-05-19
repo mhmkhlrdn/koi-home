@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Api\FishRecordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fish-records', [FishRecordController::class, 'store']);
+    Route::get('/dashboard/fish-statistics', [DashboardController::class, 'fishStatistics']);
 
     Route::get('/fish-records', [FishRecordController::class, 'index']);
 

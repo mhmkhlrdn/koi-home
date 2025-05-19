@@ -12,8 +12,8 @@ class Fish extends Model
     protected $table = 'fishes';
 
     protected $fillable = [
-        'code', 'bloodline_id', 'variety_id', 'sale_type',
-        'gender', 'fixedPrice', 'birthDate', 'user_id', 'pool_id'
+        'code', 'bloodline_id', 'variety_id',
+        'gender', 'birthDate', 'user_id', 'pool_id'
     ];
 
     public function user()
