@@ -1,7 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -15,38 +15,81 @@ const initialStats = {
     varietyRatio: [],
 };
 
+const initialDiseaseStats = {
+    daily_diagnoses: [],
+    monthly_diagnoses: [],
+    yearly_diagnoses: [],
+    disease_ratio: [],
+    recovery_status: [],
+    long_term_cases: [],
+    disease_frequency: [],
+};
+
 const DashboardPage = () => {
+    const [diseaseStats, setDiseaseStats] = useState(initialDiseaseStats);
+    const [diseaseTimeRange, setDiseaseTimeRange] = useState('daily');
+    const [selectedDisease, setSelectedDisease] = useState(null);
     const [stats, setStats] = useState(initialStats);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [timeRange, setTimeRange] = useState('daily');
 
+    const formatDateData = (data, key) => {
+        if (!data) return [];
+
+        const formatted = data.map((item) => ({ ...item, [key]: item[key] }));
+
+        return formatted.sort((a, b) => {
+            if (key === 'month') {
+                const [aYear, aMonth] = a[key].split('-');
+                const [bYear, bMonth] = b[key].split('-');
+                return bYear - aYear || bMonth - aMonth;
+            }
+            return new Date(b[key]) - new Date(a[key]);
+        });
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchAllData = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const response = await axios.get('/kh-admin/dashboard/fish-statistics');
-                // Ensure all expected fields exist in the response
+
+                // Fetch both fish and disease data in parallel
+                const [fishResponse, diseaseResponse] = await Promise.all([
+                    axios.get('/kh-admin/dashboard/fish-statistics'),
+                    axios.get('/kh-admin/dashboard/disease-statistics'),
+                ]);
+
+                // Process fish data
                 setStats({
-                    daily: response.data.daily || [],
-                    monthly: response.data.monthly || [],
-                    total_fishes: response.data.total_fishes || 0,
-                    yearly: response.data.yearly || [],
-                    genderRatio: response.data.gender_ratio || [],
-                    varietyRatio: response.data.variety_ratio || [],
+                    daily: formatDateData(fishResponse.data.daily, 'date'),
+                    monthly: formatDateData(fishResponse.data.monthly, 'month'),
+                    yearly: formatDateData(fishResponse.data.yearly, 'year'),
+                    total_fishes: fishResponse.data.total_fishes || 0,
+                    genderRatio: fishResponse.data.gender_ratio || [],
+                    varietyRatio: fishResponse.data.variety_ratio || [],
+                });
+
+                // Process disease data
+                setDiseaseStats({
+                    daily_diagnoses: formatDateData(diseaseResponse.data.daily_diagnoses, 'date'),
+                    monthly_diagnoses: formatDateData(diseaseResponse.data.monthly_diagnoses, 'month'),
+                    yearly_diagnoses: formatDateData(diseaseResponse.data.yearly_diagnoses, 'year'),
+                    disease_ratio: diseaseResponse.data.disease_ratio || [],
+                    recovery_status: diseaseResponse.data.recovery_status || [],
+                    long_term_cases: diseaseResponse.data.long_term_cases || [],
+                    disease_frequency: diseaseResponse.data.disease_frequency || [],
                 });
             } catch (err) {
                 console.error('API Error:', err);
                 setError(err.response?.data?.message || 'Failed to fetch dashboard data');
-                // Reset to initial state on error
-                setStats(initialStats);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        fetchAllData();
     }, []);
 
     const renderTimeChart = () => {
@@ -154,6 +197,58 @@ const DashboardPage = () => {
         );
     }
 
+    // Add these chart rendering functions
+    const renderDiseaseTimeChart = () => {
+        let data, xKey, title;
+
+        switch (diseaseTimeRange) {
+            case 'daily':
+                data = diseaseStats.daily_diagnoses || [];
+                xKey = 'date';
+                title = 'Fish Diagnoses Daily';
+                break;
+            case 'monthly':
+                data = diseaseStats.monthly_diagnoses || [];
+                xKey = 'month';
+                title = 'Fish Diagnoses Monthly';
+                break;
+            case 'yearly':
+                data = diseaseStats.yearly_diagnoses || [];
+                xKey = 'year';
+                title = 'Fish Diagnoses Yearly';
+                break;
+            default:
+                data = [];
+        }
+
+        return (
+            <div className="rounded-lg bg-gray-700 p-4 shadow">
+                <h3 className="mb-4 text-lg font-semibold">{title}</h3>
+                <div className="mb-2 flex justify-between">
+                    <select
+                        value={diseaseTimeRange}
+                        onChange={(e) => setDiseaseTimeRange(e.target.value)}
+                        className="rounded border bg-gray-700 px-2 py-1 text-sm"
+                    >
+                        <option value="daily">Daily</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={xKey} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="count" fill="#FF8042" name="Number of Diagnoses" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
     if (error) {
         return (
             <AdminLayout>
@@ -167,6 +262,122 @@ const DashboardPage = () => {
             </AdminLayout>
         );
     }
+
+    const renderDiseaseRatioChart = () => (
+        <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Disease Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                    <Pie
+                        data={diseaseStats.disease_ratio}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                        nameKey="disease_name"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                        {diseaseStats.disease_ratio.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
+
+    const renderDiseaseFrequencyChart = () => {
+        if (!diseaseStats.disease_frequency.length) return null;
+
+        return (
+            <div className="rounded-lg bg-gray-700 p-4 shadow">
+                <h3 className="mb-4 text-lg font-semibold">Disease Frequency Over Time</h3>
+                <div className="mb-2">
+                    <select
+                        value={selectedDisease || ''}
+                        onChange={(e) => setSelectedDisease(e.target.value)}
+                        className="rounded border bg-gray-700 px-2 py-1 text-sm"
+                    >
+                        <option value="">Select a disease</option>
+                        {diseaseStats.disease_frequency.map((disease, index) => (
+                            <option key={index} value={index}>
+                                {disease.disease_name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                {selectedDisease !== null && (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={diseaseStats.disease_frequency[selectedDisease].data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="count" stroke="#8884d8" name="Cases" activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        );
+    };
+
+    const renderRecoveryStatusChart = () => (
+        <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Recovery Status</h3>
+            <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                    <Pie
+                        data={diseaseStats.recovery_status}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                        nameKey="status"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                        {diseaseStats.recovery_status.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
+
+    const renderLongTermCases = () => (
+        <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Long-Term Cases ({diseaseStats.long_term_cases.length})</h3>
+            <div className="max-h-64 overflow-y-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b border-gray-600">
+                            <th className="px-4 py-2 text-left">Fish Code</th>
+                            <th className="px-4 py-2 text-left">Disease</th>
+                            <th className="px-4 py-2 text-left">Days Sick</th>
+                            <th className="px-4 py-2 text-left">Treatments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {diseaseStats.long_term_cases.map((caseItem, index) => (
+                            <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
+                                <td className="px-4 py-2">{caseItem.fish_code}</td>
+                                <td className="px-4 py-2">{caseItem.disease_name}</td>
+                                <td className="px-4 py-2">{caseItem.days_sick}</td>
+                                <td className="px-4 py-2">{caseItem.treatments_count}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 
     return (
         <AdminLayout>
@@ -210,6 +421,13 @@ const DashboardPage = () => {
                         </div>
                     </div>
                 </div>
+                <div className="col-span-3 row-span-1">{renderDiseaseTimeChart()}</div>
+                <div className="col-span-1">{renderDiseaseRatioChart()}</div>
+                <div className="col-span-1">{renderRecoveryStatusChart()}</div>
+                <div className="col-span-1">{renderDiseaseFrequencyChart()}</div>
+
+                {/* Long term cases - full width */}
+                <div className="col-span-3">{renderLongTermCases()}</div>
             </main>
         </AdminLayout>
     );
