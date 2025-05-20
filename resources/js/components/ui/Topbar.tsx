@@ -16,7 +16,7 @@ export default function TopBar() {
 
     const languages = [
         { code: 'en', name: 'English' },
-        { code: 'km', name: 'ភាសាខ្មែរ' },
+        { code: 'id', name: 'Bahasa Indonesia' },
     ];
 
     return (

@@ -14,6 +14,24 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    server: {
+        host: 'localhost',
+        port: 5173,
+        strictPort: true,
+        hmr: { host: 'localhost' },
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/sanctum': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                secure: false,
+            },
+        },
+    },
     esbuild: {
         jsx: 'automatic',
     },

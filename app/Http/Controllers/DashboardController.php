@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Fish;
 use App\Models\FishDisease;
+use App\Models\FishGrowth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -13,6 +14,74 @@ class DashboardController extends Controller
     public function index () {
         return Inertia::render('admin/dashboard', ['fishesCount'=> Fish::count()]);
     }
+
+    public function fishGrowthStatistics()
+{
+    // Fish without recent measurements (older than 30 days)
+    $inactiveFish = Fish::whereDoesntHave('growthRecords', function($query) {
+        $query->where('recorded_at', '>=', now()->subDays(30));
+    })
+    ->with(['latestSize'])
+    ->get()
+    ->map(function($fish) {
+        return [
+            'fish_id' => $fish->id,
+            'code' => $fish->code,
+            'last_measurement' => $fish->latestSize?->recorded_at,
+            'days_since_measurement' => $fish->latestSize
+                ? now()->diffInDays($fish->latestSize->recorded_at)
+                : 'Never measured'
+        ];
+    });
+
+    // Improved query for shrinking fish
+    $shrinkingFish = Fish::whereHas('growthRecords', function($query) {
+            $query->groupBy('fish_id')
+                ->havingRaw('COUNT(*) > 1');
+        })
+        ->with(['growthRecords' => function($query) {
+            $query->orderBy('recorded_at', 'desc');
+        }])
+        ->get()
+        ->map(function($fish) {
+            $records = $fish->growthRecords;
+
+            if ($records->count() < 2) {
+                return null;
+            }
+
+            $latest = $records[0];
+            $previous = $records[1];
+
+            $lengthDecreased = $latest->length < $previous->length;
+            $weightDecreased = $latest->weight < $previous->weight;
+
+            if (!$lengthDecreased && !$weightDecreased) {
+                return null;
+            }
+
+            return [
+                'fish_id' => $fish->id,
+                'code' => $fish->code,
+                'current_length' => $latest->length,
+                'previous_length' => $previous->length,
+                'current_weight' => $latest->weight,
+                'previous_weight' => $previous->weight,
+                'last_measured' => $latest->recorded_at,
+                'change_percentage' => [
+                    'length' => round((($latest->length - $previous->length) / $previous->length) * 100, 2),
+                    'weight' => round((($latest->weight - $previous->weight) / $previous->weight) * 100, 2)
+                ]
+            ];
+        })
+        ->filter() // Remove null entries
+        ->values();
+
+    return response()->json([
+        'inactive_fish' => $inactiveFish,
+        'shrinking_fish' => $shrinkingFish
+    ]);
+}
 
     public function fishStatistics()
     {
@@ -82,7 +151,7 @@ class DashboardController extends Controller
 public function diseaseStatistics(Request $request)
 {
     $query = FishDisease::with(['fish', 'disease']);
-    
+
     // Apply date filters if provided
     if ($request->has('start_date') && $request->has('end_date')) {
         $query->whereBetween('diagnosis_date', [

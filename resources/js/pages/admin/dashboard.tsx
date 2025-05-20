@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import axios from 'axios';
+import { ArrowDown, ArrowUp, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -33,6 +34,10 @@ const DashboardPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [timeRange, setTimeRange] = useState('daily');
+    const [growthStats, setGrowthStats] = useState({
+        inactive_fish: [],
+        shrinking_fish: [],
+    });
 
     const formatDateData = (data, key) => {
         if (!data) return [];
@@ -49,6 +54,15 @@ const DashboardPage = () => {
         });
     };
 
+    const fetchGrowthData = async () => {
+        try {
+            const response = await axios.get('/kh-admin/dashboard/growth-statistics');
+            setGrowthStats(response.data);
+        } catch (err) {
+            console.error('Error fetching growth data:', err);
+        }
+    };
+
     useEffect(() => {
         const fetchAllData = async () => {
             try {
@@ -59,6 +73,7 @@ const DashboardPage = () => {
                 const [fishResponse, diseaseResponse] = await Promise.all([
                     axios.get('/kh-admin/dashboard/fish-statistics'),
                     axios.get('/kh-admin/dashboard/disease-statistics'),
+                    await fetchGrowthData(),
                 ]);
 
                 // Process fish data
@@ -117,7 +132,7 @@ const DashboardPage = () => {
 
         if (data.length === 0) {
             return (
-                <div className="rounded-lg bg-gray-700 p-4 shadow">
+                <div className="rounded-lg bg-gray-800 p-4 shadow">
                     <h3 className="mb-4 text-lg font-semibold">{title}</h3>
                     <p className="text-gray-500">No data available</p>
                 </div>
@@ -125,7 +140,7 @@ const DashboardPage = () => {
         }
 
         return (
-            <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <div className="rounded-lg bg-gray-800 p-4 shadow">
                 <h3 className="mb-4 text-lg font-semibold">{title}</h3>
                 <div className="mb-2 flex justify-end">
                     <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="rounded border bg-gray-700 px-2 py-1 text-sm">
@@ -159,7 +174,7 @@ const DashboardPage = () => {
         }
 
         return (
-            <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <div className="rounded-lg bg-gray-800 p-4 shadow">
                 <h3 className="mb-4 text-lg font-semibold text-white">{title}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -197,6 +212,80 @@ const DashboardPage = () => {
         );
     }
 
+    const renderInactiveFish = () => (
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                Fish Needing Measurements
+            </h3>
+            <div className="max-h-64 overflow-y-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b border-gray-600">
+                            <th className="px-4 py-2 text-left">Fish Code</th>
+                            <th className="px-4 py-2 text-left">Last Measurement</th>
+                            <th className="px-4 py-2 text-left">Days Since</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {growthStats.inactive_fish.map((fish, index) => (
+                            <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
+                                <td className="px-4 py-2">{fish.code}</td>
+                                <td className="px-4 py-2">{fish.last_measurement || 'Never measured'}</td>
+                                <td className="px-4 py-2">{fish.days_since_measurement}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+
+    const renderShrinkingFish = () => (
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <ArrowDown className="h-5 w-5 text-red-500" />
+                Fish With Decreasing Size
+            </h3>
+            <div className="max-h-64 overflow-y-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b border-gray-600">
+                            <th className="px-4 py-2 text-left">Fish Code</th>
+                            <th className="px-4 py-2 text-left">Length Change</th>
+                            <th className="px-4 py-2 text-left">Weight Change</th>
+                            <th className="px-4 py-2 text-left">Last Measured</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {growthStats.shrinking_fish.map((fish, index) => (
+                            <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
+                                <td className="px-4 py-2">{fish.code}</td>
+                                <td className={`px-4 py-2 ${fish.change_percentage.length < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                    {fish.change_percentage.length}%
+                                    {fish.change_percentage.length < 0 ? (
+                                        <ArrowDown className="ml-1 inline h-4 w-4" />
+                                    ) : (
+                                        <ArrowUp className="ml-1 inline h-4 w-4" />
+                                    )}
+                                </td>
+                                <td className={`px-4 py-2 ${fish.change_percentage.weight < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                    {fish.change_percentage.weight}%
+                                    {fish.change_percentage.weight < 0 ? (
+                                        <ArrowDown className="ml-1 inline h-4 w-4" />
+                                    ) : (
+                                        <ArrowUp className="ml-1 inline h-4 w-4" />
+                                    )}
+                                </td>
+                                <td className="px-4 py-2">{fish.last_measured}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+
     // Add these chart rendering functions
     const renderDiseaseTimeChart = () => {
         let data, xKey, title;
@@ -222,13 +311,13 @@ const DashboardPage = () => {
         }
 
         return (
-            <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <div className="rounded-lg bg-gray-800 p-4 shadow">
                 <h3 className="mb-4 text-lg font-semibold">{title}</h3>
                 <div className="mb-2 flex justify-between">
                     <select
                         value={diseaseTimeRange}
                         onChange={(e) => setDiseaseTimeRange(e.target.value)}
-                        className="rounded border bg-gray-700 px-2 py-1 text-sm"
+                        className="rounded border bg-gray-800 px-2 py-1 text-sm"
                     >
                         <option value="daily">Daily</option>
                         <option value="monthly">Monthly</option>
@@ -264,7 +353,7 @@ const DashboardPage = () => {
     }
 
     const renderDiseaseRatioChart = () => (
-        <div className="rounded-lg bg-gray-700 p-4 shadow">
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
             <h3 className="mb-4 text-lg font-semibold">Disease Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -293,13 +382,13 @@ const DashboardPage = () => {
         if (!diseaseStats.disease_frequency.length) return null;
 
         return (
-            <div className="rounded-lg bg-gray-700 p-4 shadow">
+            <div className="rounded-lg bg-gray-800 p-4 shadow">
                 <h3 className="mb-4 text-lg font-semibold">Disease Frequency Over Time</h3>
                 <div className="mb-2">
                     <select
                         value={selectedDisease || ''}
                         onChange={(e) => setSelectedDisease(e.target.value)}
-                        className="rounded border bg-gray-700 px-2 py-1 text-sm"
+                        className="rounded border bg-gray-800 px-2 py-1 text-sm"
                     >
                         <option value="">Select a disease</option>
                         {diseaseStats.disease_frequency.map((disease, index) => (
@@ -326,7 +415,7 @@ const DashboardPage = () => {
     };
 
     const renderRecoveryStatusChart = () => (
-        <div className="rounded-lg bg-gray-700 p-4 shadow">
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
             <h3 className="mb-4 text-lg font-semibold">Recovery Status</h3>
             <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -352,7 +441,7 @@ const DashboardPage = () => {
     );
 
     const renderLongTermCases = () => (
-        <div className="rounded-lg bg-gray-700 p-4 shadow">
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
             <h3 className="mb-4 text-lg font-semibold">Long-Term Cases ({diseaseStats.long_term_cases.length})</h3>
             <div className="max-h-64 overflow-y-auto">
                 <table className="w-full">
@@ -381,53 +470,56 @@ const DashboardPage = () => {
 
     return (
         <AdminLayout>
-            <main className="m-4 grid grid-cols-3 grid-rows-4 gap-6">
+            <main className="m-4 grid gap-4">
                 {/* Time-based chart (takes full width) */}
-                <div className="col-span-3 row-span-2">{renderTimeChart()}</div>
-
-                {/* Gender ratio pie chart */}
-                <div className="col-span-1 row-span-2">
-                    {renderPieChart(
-                        stats.genderRatio.map((item) => ({
-                            name: item.gender,
-                            value: item.count,
-                        })),
-                        'Gender Ratio',
-                        'value',
-                        'name',
-                    )}
-                </div>
-
-                {/* Variety ratio pie chart */}
-                <div className="col-span-1 row-span-2">
-                    {renderPieChart(
-                        stats.varietyRatio.map((item) => ({
-                            name: item.variety_name,
-                            value: item.count,
-                        })),
-                        'Variety Ratio',
-                        'value',
-                        'name',
-                    )}
-                </div>
-
-                {/* Quick stats */}
-                <div className="col-span-1 row-span-2 rounded-lg bg-gray-700 p-4 shadow">
-                    <h3 className="mb-4 text-lg font-semibold text-white">Quick Stats</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <p className="text-sm text-gray-500">Total Fish</p>
-                            <p className="text-2xl font-bold">{stats.total_fishes}</p>
+                <div className="grid grid-cols-3 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <div className="col-span-3">{renderTimeChart()}</div>
+                    {/* Gender ratio pie chart */}
+                    <div className="col-span-1">
+                        {renderPieChart(
+                            stats.genderRatio.map((item) => ({
+                                name: item.gender,
+                                value: item.count,
+                            })),
+                            'Gender Ratio',
+                            'value',
+                            'name',
+                        )}
+                    </div>
+                    {/* Variety ratio pie chart */}
+                    <div className="col-span-1">
+                        {renderPieChart(
+                            stats.varietyRatio.map((item) => ({
+                                name: item.variety_name,
+                                value: item.count,
+                            })),
+                            'Variety Ratio',
+                            'value',
+                            'name',
+                        )}
+                    </div>
+                    {/* Quick stats */}
+                    <div className="col-span-1 rounded-lg bg-gray-800 p-4 shadow">
+                        <h3 className="mb-4 text-lg font-semibold text-white">Quick Stats</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-sm text-gray-500">Total Fish</p>
+                                <p className="text-2xl font-bold">{stats.total_fishes}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="col-span-3 row-span-1">{renderDiseaseTimeChart()}</div>
-                <div className="col-span-1">{renderDiseaseRatioChart()}</div>
-                <div className="col-span-1">{renderRecoveryStatusChart()}</div>
-                <div className="col-span-1">{renderDiseaseFrequencyChart()}</div>
-
-                {/* Long term cases - full width */}
-                <div className="col-span-3">{renderLongTermCases()}</div>
+                <div className="grid grid-cols-3 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <div className="col-span-3 row-span-1">{renderDiseaseTimeChart()}</div>
+                    <div className="col-span-1">{renderDiseaseRatioChart()}</div>
+                    <div className="col-span-1">{renderRecoveryStatusChart()}</div>
+                    <div className="col-span-1">{renderDiseaseFrequencyChart()}</div>
+                    <div className="col-span-3">{renderLongTermCases()}</div>
+                </div>
+                <div className="grid grid-rows-2 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <div className="row-span-1">{renderInactiveFish()}</div>
+                    <div className="row-span-1">{renderShrinkingFish()}</div>
+                </div>
             </main>
         </AdminLayout>
     );
