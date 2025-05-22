@@ -7,6 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/translate-proxy', function () {
+    $url = 'https://translate.googleapis.com' . request()->getRequestUri();
+    $client = new \GuzzleHttp\Client();
+
+    try {
+        $response = $client->get($url, [
+            'headers' => [
+                'Accept' => 'application/json',
+            ]
+        ]);
+
+        return response($response->getBody(), $response->getStatusCode())
+            ->header('Content-Type', 'application/json');
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Translation service unavailable'], 502);
+    }
+})->where('path', '.*');
+
 Route::get('/dashboard/fish-statistics', [DashboardController::class, 'fishStatistics'])->withoutMiddleware(['auth:api']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fish-records', [FishRecordController::class, 'store']);

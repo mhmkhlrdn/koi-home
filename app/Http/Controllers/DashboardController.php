@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Fish;
 use App\Models\FishDisease;
 use App\Models\FishGrowth;
+use App\Models\FishTreatment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,6 +15,91 @@ class DashboardController extends Controller
     public function index () {
         return Inertia::render('admin/dashboard', ['fishesCount'=> Fish::count()]);
     }
+
+    public function medicineUsageStatistics(Request $request)
+{
+    $query = FishTreatment::with(['treatment.medicine.measurement'])
+        ->select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+            DB::raw('YEAR(created_at) as year'),
+            'treatment_id',
+            DB::raw('SUM(dosage) as total_dosage'),
+            DB::raw('COUNT(*) as treatment_count')
+        )
+        ->groupBy('date', 'month', 'year', 'treatment_id');
+
+    // Apply date filters if needed
+    if ($request->has(['start_date', 'end_date'])) {
+        $query->whereBetween('created_at', [
+            $request->input('start_date'),
+            $request->input('end_date')
+        ]);
+    }
+
+    $results = $query->get();
+
+    // Format data for different time periods
+    $dailyUsage = $results->groupBy('date')->map(function($day) {
+        return [
+            'date' => $day->first()->date,
+            'treatments' => $day->sum('treatment_count'),
+            'medicines' => $day->groupBy('treatment_id')->map(function($treatment) {
+                return [
+                    'name' => $treatment->first()->treatment->name,
+                    'dosage' => $treatment->sum('total_dosage'),
+                    'unit' => $treatment->first()->treatment->medicine->measurement->name ?? 'ml'
+                ];
+            })
+        ];
+    });
+
+    $monthlyUsage = $results->groupBy('month')->map(function($month) {
+        return [
+            'month' => $month->first()->month,
+            'treatments' => $month->sum('treatment_count'),
+            'medicines' => $month->groupBy('treatment_id')->map(function($treatment) {
+                return [
+                    'name' => $treatment->first()->treatment->name,
+                    'dosage' => $treatment->sum('total_dosage'),
+                    'unit' => $treatment->first()->treatment->medicine->measurement->name ?? 'ml',
+
+                ];
+            })
+        ];
+    });
+
+    $yearlyUsage = $results->groupBy('year')->map(function($year) {
+        return [
+            'year' => $year->first()->year,
+            'treatments' => $year->sum('treatment_count'),
+            'medicines' => $year->groupBy('treatment_id')->map(function($treatment) {
+                return [
+                    'name' => $treatment->first()->treatment->name,
+                    'dosage' => $treatment->sum('total_dosage'),
+                    'unit' => $treatment->first()->treatment->medicine->measurement->name ?? 'ml'
+                ];
+            })
+        ];
+    });
+
+    return response()->json([
+        'daily_usage' => $dailyUsage->values(),
+        'monthly_usage' => $monthlyUsage->values(),
+        'yearly_usage' => $yearlyUsage->values(),
+        'top_medicines' => $results->groupBy('treatment_id')
+            ->map(function($treatment) {
+                return [
+                    'name' => $treatment->first()->treatment->name,
+                    'total_dosage' => $treatment->sum('total_dosage'),
+                    'unit' => $treatment->first()->treatment->medicine->measurement->name ?? 'ml'
+                ];
+            })
+            ->sortByDesc('total_dosage')
+            ->take(5)
+            ->values()
+    ]);
+}
 
     public function fishGrowthStatistics()
 {
@@ -83,7 +169,11 @@ class DashboardController extends Controller
     ]);
 }
 
-    public function fishStatistics()
+
+
+
+
+public function fishStatistics()
     {
         // Fishes added/born per day/month/year
         $daily = Fish::select(

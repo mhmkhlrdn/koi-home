@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/fish-statistics', [DashboardController::class, 'fishStatistics']);
         Route::get('/dashboard/disease-statistics', [DashboardController::class, 'diseaseStatistics']);
         Route::get('/dashboard/growth-statistics', [DashboardController::class, 'fishGrowthStatistics']);
+        Route::get('/dashboard/medicine-usage', [DashboardController::class, 'medicineUsageStatistics']);
 
         Route::prefix('fishes')->group(function (){
             Route::get('/count/{year}/{month}', [FishController::class, 'countByMonth'])->whereNumber('year')->whereNumber("month")->name("fish.count");

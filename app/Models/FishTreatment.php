@@ -9,7 +9,7 @@ class FishTreatment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['fish_disease_id', 'treatment_id', 'dosage', 'method', 'user_id'];
+    protected $fillable = ['fish_disease_id', 'treatment_id', 'dosage', 'method', 'user_id', 'created_at', 'updated_at'];
 
     public $timestamps = false;
 

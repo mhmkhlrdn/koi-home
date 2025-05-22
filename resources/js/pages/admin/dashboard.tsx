@@ -1,6 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import axios from 'axios';
-import { ArrowDown, ArrowUp, AlertTriangle } from 'lucide-react';
+import { ArrowDown, ArrowUp, AlertTriangle, Droplet, TrendingUp, Cross } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -38,6 +38,13 @@ const DashboardPage = () => {
         inactive_fish: [],
         shrinking_fish: [],
     });
+    const [medicineStats, setMedicineStats] = useState({
+        daily_usage: [],
+        monthly_usage: [],
+        yearly_usage: [],
+        top_medicines: [],
+    });
+    const [medicineTimeRange, setMedicineTimeRange] = useState('daily');
 
     const formatDateData = (data, key) => {
         if (!data) return [];
@@ -52,6 +59,14 @@ const DashboardPage = () => {
             }
             return new Date(b[key]) - new Date(a[key]);
         });
+    };
+    const fetchMedicineData = async () => {
+        try {
+            const response = await axios.get('/kh-admin/dashboard/medicine-usage');
+            setMedicineStats(response.data);
+        } catch (err) {
+            console.error('Error fetching medicine data:', err);
+        }
     };
 
     const fetchGrowthData = async () => {
@@ -74,6 +89,7 @@ const DashboardPage = () => {
                     axios.get('/kh-admin/dashboard/fish-statistics'),
                     axios.get('/kh-admin/dashboard/disease-statistics'),
                     await fetchGrowthData(),
+                    await fetchMedicineData(),
                 ]);
 
                 // Process fish data
@@ -162,6 +178,101 @@ const DashboardPage = () => {
             </div>
         );
     };
+
+    const renderMedicineUsageChart = () => {
+        let data, xKey, title;
+
+        switch (medicineTimeRange) {
+            case 'daily':
+                data = medicineStats.daily_usage || [];
+                xKey = 'date';
+                title = 'Daily Medicine Usage';
+                break;
+            case 'monthly':
+                data = medicineStats.monthly_usage || [];
+                xKey = 'month';
+                title = 'Monthly Medicine Usage';
+                break;
+            case 'yearly':
+                data = medicineStats.yearly_usage || [];
+                xKey = 'year';
+                title = 'Yearly Medicine Usage';
+                break;
+            default:
+                data = [];
+        }
+
+        // Prepare chart data
+        const chartData = data.map((period) => ({
+            date: period[xKey],
+            treatments: period.treatments,
+            ...Object.fromEntries(Object.entries(period.medicines).map(([id, med]) => [`${med.name} (${med.unit})`, med.dosage])),
+        }));
+
+        const medicineColors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+        return (
+            <div className="rounded-lg bg-gray-800 p-4 shadow">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <Cross className="h-5 w-5 text-blue-500" />
+                    {title}
+                </h3>
+                <div className="mb-2 flex justify-between">
+                    <select
+                        value={medicineTimeRange}
+                        onChange={(e) => setMedicineTimeRange(e.target.value)}
+                        className="rounded border bg-gray-700 px-2 py-1 text-sm"
+                    >
+                        <option value="daily">Daily</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={xKey} />
+                        <YAxis yAxisId="left" orientation="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="treatments" name="Treatments" fill="#82ca9d" />
+                        {medicineStats.top_medicines.map((medicine, index) => (
+                            <Bar
+                                yAxisId="right"
+                                key={medicine.name}
+                                dataKey={`${medicine.name} (${medicine.unit})`}
+                                name={`${medicine.name} Usage`}
+                                fill={medicineColors[index % medicineColors.length]}
+                            />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
+    const renderTopMedicines = () => (
+        <div className="rounded-lg bg-gray-800 p-4 shadow">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+                Top Medicines Used
+            </h3>
+            <div className="space-y-3">
+                {medicineStats.top_medicines.map((medicine, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Droplet className="h-4 w-4 text-blue-500" />
+                            <span>{medicine.name}</span>
+                        </div>
+                        <div className="font-mono">
+                            {medicine.total_dosage} {medicine.unit}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 
     const renderPieChart = (data, title, dataKey, nameKey) => {
         if (!data || data.length === 0) {
@@ -519,6 +630,14 @@ const DashboardPage = () => {
                 <div className="grid grid-rows-2 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
                     <div className="row-span-1">{renderInactiveFish()}</div>
                     <div className="row-span-1">{renderShrinkingFish()}</div>
+                </div>
+
+                <div className="grid grid-rows-1 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    {/* Medicine Usage - Full width */}
+                    <div className="col-span-3">{renderMedicineUsageChart()}</div>
+
+                    {/* Top Medicines - Side section */}
+                    <div className="col-span-3">{renderTopMedicines()}</div>
                 </div>
             </main>
         </AdminLayout>
