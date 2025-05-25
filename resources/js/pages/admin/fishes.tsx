@@ -1,9 +1,7 @@
-//@ts-nocheck
-
 import ButtonLink from '@/components/ui/ButtonLink';
 import AdminLayout from '@/layouts/AdminLayout';
-import { router, useForm, usePage } from '@inertiajs/react';
-import { CircleHelp, Mars, Pencil, Settings, Trash, Venus } from 'lucide-react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
+import { CircleHelp, Eye, Mars, Pencil, Settings, Trash, Venus } from 'lucide-react';
 import { useState } from 'react';
 import MainHeader from '../../components/MainHeader';
 import PaginationNav from '../../components/PaginationNav';
@@ -32,6 +30,7 @@ const Fishes = () => {
         owner_id: '',
         pool_id: '',
         search_input: '',
+        pagination_limit: '10',
     });
 
     const openModal = (fish) => {
@@ -180,6 +179,9 @@ const Fishes = () => {
             <button onClick={() => openManageModal(fish)} className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600">
                 <Settings className="h-4 w-4" />
             </button>
+            <Link href={`/kh-admin/fish/${fish.id}`} className="rounded bg-green-500 p-2 text-white hover:bg-green-600">
+                <Eye className="h-4 w-4" />
+            </Link>
         </>
     );
 
@@ -319,6 +321,13 @@ const Fishes = () => {
                             </option>
                         ))}
                     </select>
+                    <select className="modalInput" name="pagination_limit" value={filters.pagination_limit} onChange={handleChange}>
+                        <option value="10">Show 10</option>
+                        <option value="25">Show 25</option>
+                        <option value="50">Show 50</option>
+                        <option value="100">Show 100</option>
+                    </select>
+
                     <button onClick={handleApply} className="mt-2 rounded bg-blue-500 px-4 py-2 text-white">
                         Apply Filters
                     </button>

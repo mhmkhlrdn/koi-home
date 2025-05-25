@@ -1,19 +1,46 @@
 import MainHeader from '@/components/MainHeader';
 import AdminLayout from '@/layouts/AdminLayout';
-import { usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useForm, usePage } from '@inertiajs/react';
+import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const medicines = () => {
-    const { medicinesInStock, medicinesOutOfStock, medicineType }: any = usePage().props;
+    const { medicinesInStock, medicinesOutOfStock, medicineType, measurements, types }: any = usePage().props;
     useEffect(() => {
         console.log('medicines in stock: ', medicinesInStock);
         console.log('medicines out stock: ', medicinesOutOfStock);
         console.log('medicines types: ', medicineType);
     });
+    const manageModal = (modalName: string) => {
+        setModals((prev) => ({
+            ...prev,
+            [modalName]: !prev[modalName],
+        }));
+    };
+    const [modals, setModals] = useState({
+        modalCreate: false,
+        modalFilter: false,
+        modalEdit: false,
+        modalDelete: false,
+    });
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        amount: 0,
+        measurement_id: 0,
+        packaging: 0,
+        instruction: '',
+        type_id: 0,
+        image_url: '',
+    });
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('medicine.store'));
+        manageModal('modalCreate');
+    };
     return (
         <AdminLayout>
             <main className="grid grid-cols-5 gap-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                <MainHeader variant="primary" title="Medicines In Stock" styleClass="col-span-5" />
+                <MainHeader variant="primary" title="Medicines In Stock" onClickCreate={() => manageModal('modalCreate')} styleClass="col-span-5" />
                 {medicinesInStock.map((stocked: any) => (
                     <div className="align-center justify-center rounded-lg bg-gray-900 p-4">
                         <img className="mx-auto max-w-48 rounded-lg" src={`/images/${stocked.id}.jpeg`} alt="" />
@@ -25,6 +52,10 @@ const medicines = () => {
                         <div className="px-2 pt-2">
                             <label>
                                 Amount in stock: {stocked.amount} <br />
+                            </label>
+                            <label>
+                                Total left: {stocked.totalLeft}
+                                {stocked.measurement.name} <br />
                             </label>
                             <label>
                                 Packaging: {stocked.packaging}
@@ -43,6 +74,97 @@ const medicines = () => {
                     </div>
                 ))}
             </main>
+            {modals.modalCreate && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+                    <div className="w-1/2 rounded-lg bg-[#060E1C] p-6 shadow-lg">
+                        <div className="flex justify-between">
+                            <h2 className="text-xl font-semibold">Add New Medicine</h2>
+                            <button onClick={() => manageModal('modalCreate')} className="text-gray-500 hover:text-gray-700">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <div className="mt-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="text-md font-bold text-white">Medicine Name</label>
+                                    <input
+                                        type="text"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-md font-bold text-white">Amount</label>
+                                    <input
+                                        type="number"
+                                        value={data.amount}
+                                        onChange={(e) => setData('amount', parseInt(e.target.value))}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-md font-bold text-white">Packaging</label>
+                                    <input
+                                        type="number"
+                                        value={data.packaging}
+                                        onChange={(e) => setData('packaging', parseInt(e.target.value))}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-md font-bold text-white">Measurement</label>
+                                    <select
+                                        value={data.measurement_id}
+                                        onChange={(e) => setData('measurement_id', parseInt(e.target.value))}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    >
+                                        <option value="">Select measurement</option>
+                                        {measurements.map((m: any) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-md font-bold text-white">Type</label>
+                                    <select
+                                        value={data.type_id}
+                                        onChange={(e) => setData('type_id', parseInt(e.target.value))}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    >
+                                        <option value="">Select type of medicine</option>
+                                        {types.map((m: any) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.type}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="text-md font-bold text-white">Instruction</label>
+                                    <textarea
+                                        value={data.instruction}
+                                        onChange={(e) => setData('instruction', e.target.value)}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button type="submit" disabled={processing} className="rounded-lg bg-blue-500 px-4 py-2 text-white">
+                                        {processing ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 };

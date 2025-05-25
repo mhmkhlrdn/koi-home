@@ -12,10 +12,13 @@ type Fish = {
     id: string;
     code?: string;
     disease_id?: string;
+    dosage: number;
+    treatment_id: number;
 };
 type ModalState = {
     treatedFish: { isOpen: boolean; selectedFish: Fish | null };
     confirmSchedule: { isOpen: boolean };
+    appointNextSchedule: { isOpen: boolean };
 };
 
 const UnderTreatment = () => {
@@ -32,12 +35,9 @@ const UnderTreatment = () => {
     const [modalState, setModalState] = useState<ModalState>({
         treatedFish: { isOpen: false, selectedFish: null },
         confirmSchedule: { isOpen: false },
+        appointNextSchedule: { isOpen: false },
     });
     const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
-    const { data, setData, post } = useForm({
-        fish_id: selectedFish?.id || '',
-        recoveryDate: '',
-    });
     const { treatedFishes } = usePage().props;
     const treatedFishColumns = [
         { key: 'id', label: 'ID' },
@@ -49,11 +49,13 @@ const UnderTreatment = () => {
         { key: 'method', label: 'Method' },
         { key: 'applied_by', label: 'Treatment Applied By' },
     ];
+
     const formatTreatedFishData = () => {
         return treatedFishes.data.map((item) => ({
             id: item.id,
             sickfish_code: item.fish_disease?.fish?.code || 'N/A',
             treatment_name: item.treatment?.name || 'N/A',
+            treatment_id: item.treatment?.id,
             dosage: item.dosage ? `${item.dosage} ${item.treatment?.medicine?.measurement?.name}` : 'N/A',
             next_appointment: item.schedule?.datetime || 'N/A',
             time_left: timeLeftMap[item.id] || 'Calculating...',
@@ -63,6 +65,12 @@ const UnderTreatment = () => {
     };
     const [timeLeftMap, setTimeLeftMap] = useState<Record<string, string>>({});
 
+    const { data, setData, post } = useForm({
+        fish_id: selectedFish?.id || '',
+        recoveryDate: '',
+        dosage: 0,
+        treatment_id: 0,
+    });
     // Calculate time left for each treated fish
     useEffect(() => {
         const calculateTimeLeft = () => {
@@ -94,12 +102,6 @@ const UnderTreatment = () => {
         return () => clearInterval(interval);
     }, [treatedFishes]);
 
-    useEffect(() => {
-        if (selectedFish) {
-            setData('fish_id', selectedFish.id);
-        }
-    }, [selectedFish]);
-
     const toggleModal = (modalName: keyof ModalState, fish: Fish | null = null) => {
         if (fish) setSelectedFish(fish);
 
@@ -121,6 +123,35 @@ const UnderTreatment = () => {
             modalState[key as keyof ModalState].isOpen = false;
         });
     };
+
+    useEffect(() => {
+        if (selectedFish) {
+            // setData('fish_id', selectedFish.id);
+            const dosage = selectedFish.dosage;
+            const numberPart = dosage.split(' ')[0];
+            const parsedDosage = parseInt(numberPart);
+            setData({
+                fish_id: selectedFish.id,
+                dosage: parsedDosage,
+                recoveryDate: '',
+                treatment_id: selectedFish.treatment_id,
+            });
+        }
+    }, [selectedFish]);
+    const handleNoSchedule = () => {
+        // Delay post to next tick to ensure state is set
+        post(route('treatmentAppliedNoSchedule'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+            },
+            onError: (errors) => {
+                console.error('Error applying treatment:', errors);
+            },
+        });
+        console.log(data);
+    };
+
     return (
         <AdminLayout>
             <main className="grid gap-4">
@@ -145,8 +176,12 @@ const UnderTreatment = () => {
             </Modal>
             <Modal isOpen={modalState.confirmSchedule.isOpen} onClose={() => toggleModal('confirmSchedule')} title="Schedule the next appointment?">
                 <div className="flex flex-col gap-y-4">
-                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4">Yes</button>
-                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4">No</button>
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => toggleModal('appointNextSchedule')}>
+                        Yes
+                    </button>
+                    <button className="flex-1 cursor-pointer rounded-md bg-gray-800 px-4 py-4" onClick={() => handleNoSchedule()}>
+                        No
+                    </button>
                 </div>
             </Modal>
         </AdminLayout>

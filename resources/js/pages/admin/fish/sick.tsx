@@ -95,7 +95,7 @@ const SickFishes = () => {
         { key: 'recovery_date', label: 'Recovery Date' },
         { key: 'diagnosed_by', label: 'Diagnosed By' },
     ];
-
+console.log(sickFishes);
     const links = [
         {
             label: 'Diagnosed',

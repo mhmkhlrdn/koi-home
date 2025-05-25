@@ -16,6 +16,21 @@ use Inertia\Inertia;
 
 class TreatmentController extends Controller
 {
+
+    public function applyTreatment(Request $request) {
+        $validated = $request->validate([
+            'fish_id' => 'required|exists:fish_treatments,id',
+            'dosage' => 'required|int',
+            'recovery_date' => 'nullable',
+            'treatment_id' => 'required'
+        ]);
+
+        $medicineIdUsed = Treatment::where("id", $validated['treatment_id'])->value('medicine_id');
+$totalLeft = Medicine::where('id', $medicineIdUsed)->value('totalLeft');
+
+// dd($totalLeft);
+Medicine::where('id', $medicineIdUsed)->update(['totalLeft' =>  $totalLeft - $validated['dosage']]);
+    }
     public function update (Request $request){
         $validated = $request->validate([
             'fish_id' => 'required|int',
@@ -90,6 +105,10 @@ class TreatmentController extends Controller
             'method' => $validated['method'],
             'user_id' => Auth::id(),
         ]);
+
+        $medicineIdUsed = FishTreatment::with('treatment.medicine');
+
+
 
         NextTreatmentSchedule::insert([
             'datetime' => $validated['datetime'],

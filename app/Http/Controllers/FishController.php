@@ -18,6 +18,31 @@ use Maatwebsite\Excel\Facades\Excel;
 class FishController extends Controller
 {
 
+public function show($id)
+{
+    $fish = Fish::with([
+        'user',
+        'bloodline',
+        'variety',
+        'pool',
+        'growthRecords' => function($query) {
+            $query->orderBy('recorded_at', 'desc');
+        },
+    ])->findOrFail($id);
+
+    return Inertia::render('admin/fish/Show', [
+        'fish' => $fish,
+        'growthChartData' => $fish->growthRecords->map(function($record) {
+            return [
+                'date' => $record->recorded_at,
+                'length' => $record->length,
+                'weight' => $record->weight,
+                'photo' => $record->photoUrl
+            ];
+        }),
+
+    ]);
+}
     public function countByMonth(int $year, int $month)
     {
         // Ensure month is always two digits so 3 => 03 (optional)
@@ -78,7 +103,7 @@ public function measure(Request $request){
     }
 
 public function cetak () {
-    $Fish = Fish::with('variety', 'bloodline', 'user', 'pool')->get();
+    $Fish = Fish::with('variety', 'bloodline', 'pool')->get();
 
     	$pdf = FacadePdf::loadview('cetak-pdf',['fish'=>$Fish]);
     	return $pdf->download('laporan-fish-pdf');
@@ -128,11 +153,15 @@ public function cetak () {
         $query->where('code', 'like', '%' . $request->search_input . '%' );
     }
 
-    $fishes = $query->paginate(10)->appends($request->only([
-        'bloodline_id',
-        'variety_id',
-        'owner_id',
-        'pool_id',
+    $limit = $request->input('pagination_limit', 10);
+
+    $fishes = $query->paginate((int) $limit)->appends($request->only([
+    'bloodline_id',
+    'variety_id',
+    'owner_id',
+    'pool_id',
+    'search_input',
+    'pagination_limit',
     ]))->through(fn ($fish) => [
         'id' => $fish->id,
         'code' => $fish->code,

@@ -74,7 +74,6 @@
                 <th>Variety</th>
                 <th>Bloodline</th>
                 <th>Pool</th>
-                <th>Owner</th>
             </tr>
         </thead>
         <tbody>
@@ -86,7 +85,6 @@
                     <td>{{ $p->variety->name }}</td>
                     <td>{{ $p->bloodline->name }}</td>
                     <td>{{ $p->pool->name }}</td>
-                    <td>{{ $p->user->name }}</td>
                 </tr>
             @endforeach
         </tbody>

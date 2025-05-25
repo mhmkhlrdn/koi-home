@@ -16,6 +16,10 @@ class Treatment extends Model
         return $this->belongsTo(Disease::class);
     }
 
+    public function fishes() {
+        return $this->hasMany(FishTreatment::class, 'fish_treatments');
+    }
+
     public function medicine()
     {
         return $this->belongsTo(Medicine::class);

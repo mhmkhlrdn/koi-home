@@ -78,7 +78,7 @@ const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actio
                         <React.Fragment key={item.id}>
                             <tr
                                 className={`mx-auto border-t text-center hover:bg-gray-700 ${extraInfo ? 'cursor-pointer' : ''}`}
-                                onClick={() => toggleRow(item.id)}
+                                onClick={() => extraInfo && toggleRow(item.id)}
                             >
                                 {columns.map((col) => (
                                     <td key={col.key} className="border p-3">
@@ -86,8 +86,22 @@ const DataTable: React.FC<DataTableProps> = ({ classStyles, columns, data, actio
                                     </td>
                                 ))}
                                 {actions && (
-                                    <td className="border p-3">
-                                        <div className="flex justify-center gap-2">{actions(item)}</div>
+                                    <td className="border p-3" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex justify-center gap-2">
+                                            {React.Children.map(actions(item), (child) => {
+                                                if (React.isValidElement(child)) {
+                                                    return React.cloneElement(child, {
+                                                        onClick: (e: React.MouseEvent) => {
+                                                            e.stopPropagation();
+                                                            if (child.props.onClick) {
+                                                                child.props.onClick(e);
+                                                            }
+                                                        },
+                                                    });
+                                                }
+                                                return child;
+                                            })}
+                                        </div>
                                     </td>
                                 )}
                             </tr>

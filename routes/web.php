@@ -54,9 +54,11 @@ Route::middleware('guest')->group(function () {
 Route::put('/kh-admin/fishes/{id}', [FishController::class, 'update'])->name('fishes.update');
 Route::middleware('auth')->group(function () {
     Route::prefix('kh-admin')->group(function (){
+        Route::get('/fish/{id}', [FishController::class, 'show'])->name('fish.show');
         Route::patch('/information', [InformationController::class, 'update'])->name('info.update');
         Route::get('/information', [InformationController::class, 'index'])->name('information');
         Route::get('/medicines', [MedicineController::class, 'index'])->name('medicine.index');
+        Route::post('/medicines/store', [MedicineController::class, 'store'])->name('medicine.store');
         Route::get('/diseases/treatment', [TreatmentController::class, 'index'])->name('treatment.index');
         Route::get('/disease/create', [DiseaseController::class, 'create'])->name('disease.create');
         Route::get('/dashboard', [DashboardController::class, 'index']
@@ -84,6 +86,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/variety', [VarietyController::class, 'index'])->name('variety');
             Route::post('/variety/store', [VarietyController::class, 'store'])->name('variety.store');
         Route::post('/treatment/update', [TreatmentController::class, 'update'])->name('treatment.update');
+        Route::post('/treatment/applied', [TreatmentController::class, 'applyTreatment'])->name('treatmentAppliedNoSchedule');
 
             Route::get('/sickfishes', [SickController::class, 'index'])->name('sick-fishes');
             Route::get('/treatedfishes', [SickController::class, 'index_treated'])->name('treated-fishes');

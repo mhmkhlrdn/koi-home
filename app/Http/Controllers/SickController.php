@@ -28,7 +28,7 @@ class SickController extends Controller
     $treatedFishesPage = $request->query('treatedFishesPage', 1);
 
     // Paginate with separate query parameters
-    $sickFishes = FishDisease::with(['fish', 'disease', 'user'])
+    $sickFishes = FishDisease::with(['fish', 'disease', 'user','treatments'])
         ->paginate(10, ['*'], 'sickFishesPage')
         ->appends(['treatedFishesPage' => $treatedFishesPage]);
 

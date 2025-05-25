@@ -9,7 +9,7 @@ class Medicine extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'amount', 'measurement_id', 'instruction', 'packaging', 'image_url'];
+    protected $fillable = ['name', 'amount', 'measurement_id', 'instruction', 'packaging', 'image_url', 'totalLeft'];
 
     public function measurement()
     {
@@ -20,4 +20,5 @@ class Medicine extends Model
     {
         return $this->hasMany(MedicineType::class);
     }
+    
 }

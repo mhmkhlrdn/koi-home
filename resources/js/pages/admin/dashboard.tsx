@@ -3,6 +3,10 @@ import axios from 'axios';
 import { ArrowDown, ArrowUp, AlertTriangle, Droplet, TrendingUp, Cross } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import html2canvas from 'html2canvas';
+import { Download } from 'lucide-react';
+import { exportToExcel, exportToPDF, exportChartsToPDF } from '@/lib/utils';
+import MainHeader from '@/components/MainHeader';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -123,6 +127,161 @@ const DashboardPage = () => {
         fetchAllData();
     }, []);
 
+    // Update the exportFishStatistics function to flatten data
+    const exportFishStatistics = () => {
+        // Time-based data
+        const timeData = [
+            ...stats.daily.map((item) => ({
+                'Data Type': 'Daily',
+                Date: item.date,
+                'Fish Count': item.count,
+            })),
+            ...stats.monthly.map((item) => ({
+                'Data Type': 'Monthly',
+                Month: item.month,
+                'Fish Count': item.count,
+            })),
+            ...stats.yearly.map((item) => ({
+                'Data Type': 'Yearly',
+                Year: item.year,
+                'Fish Count': item.count,
+            })),
+        ];
+
+        // Summary data
+        const summaryData = [
+            {
+                'Data Type': 'Total Fish',
+                'Fish Count': stats.total_fishes,
+            },
+        ];
+
+        // Ratio data
+        const ratioData = [
+            ...stats.genderRatio.map((item) => ({
+                'Data Type': 'Gender Ratio',
+                Gender: item.gender,
+                Count: item.count,
+            })),
+            ...stats.varietyRatio.map((item) => ({
+                'Data Type': 'Variety Ratio',
+                Variety: item.variety_name,
+                Count: item.count,
+            })),
+        ];
+
+        // Combine all data with sheet names
+        const sheets = [
+            { name: 'Time Data', data: timeData },
+            { name: 'Summary', data: summaryData },
+            { name: 'Ratios', data: ratioData },
+        ];
+
+        exportToExcel(sheets, 'fish_statistics');
+    };
+
+    const exportFishCharts = async () => {
+        await exportChartsToPDF(['fish-time-chart', 'gender-ratio-chart', 'variety-ratio-chart'], 'fish_charts');
+    };
+
+    const exportDiseaseStatistics = () => {
+        const data = [
+            ...diseaseStats.daily_diagnoses.map((item) => ({ type: 'daily', date: item.date, count: item.count })),
+            ...diseaseStats.monthly_diagnoses.map((item) => ({ type: 'monthly', month: item.month, count: item.count })),
+            ...diseaseStats.yearly_diagnoses.map((item) => ({ type: 'yearly', year: item.year, count: item.count })),
+            ...diseaseStats.disease_ratio.map((item) => ({ type: 'disease', disease: item.disease_name, count: item.count })),
+            ...diseaseStats.recovery_status.map((item) => ({ type: 'recovery', status: item.status, count: item.count })),
+            ...diseaseStats.long_term_cases.map((item) => ({
+                type: 'long_term',
+                fish_code: item.fish_code,
+                disease_name: item.disease_name,
+                days_sick: item.days_sick,
+                treatments_count: item.treatments_count,
+            })),
+        ];
+
+        exportToExcel(data, 'disease_statistics');
+    };
+
+    const exportDiseaseCharts = async () => {
+        await exportChartsToPDF(['disease-time-chart', 'disease-ratio-chart', 'recovery-status-chart', 'disease-frequency-chart'], 'disease_charts');
+    };
+
+    const exportGrowthStatistics = () => {
+        const data = [
+            ...growthStats.inactive_fish.map((item) => ({
+                type: 'inactive',
+                code: item.code,
+                last_measurement: item.last_measurement,
+                days_since_measurement: item.days_since_measurement,
+            })),
+            ...growthStats.shrinking_fish.map((item) => ({
+                type: 'shrinking',
+                code: item.code,
+                length_change: item.change_percentage.length,
+                weight_change: item.change_percentage.weight,
+                last_measured: item.last_measured,
+            })),
+        ];
+
+        exportToExcel(data, 'growth_statistics');
+    };
+
+    const exportMedicineStatistics = () => {
+        const data = [
+            ...medicineStats.daily_usage.map((item) => ({
+                type: 'daily',
+                date: item.date,
+                treatments: item.treatments,
+                ...item.medicines,
+            })),
+            ...medicineStats.monthly_usage.map((item) => ({
+                type: 'monthly',
+                month: item.month,
+                treatments: item.treatments,
+                ...item.medicines,
+            })),
+            ...medicineStats.yearly_usage.map((item) => ({
+                type: 'yearly',
+                year: item.year,
+                treatments: item.treatments,
+                ...item.medicines,
+            })),
+            ...medicineStats.top_medicines.map((item) => ({
+                type: 'top_medicine',
+                name: item.name,
+                total_dosage: item.total_dosage,
+                unit: item.unit,
+            })),
+        ];
+
+        exportToExcel(data, 'medicine_statistics');
+    };
+
+    const exportMedicineCharts = async () => {
+        await exportChartsToPDF(['medicine-usage-chart'], 'medicine_charts');
+    };
+
+    // Add export buttons to each section
+    const ExportButtons = ({ onExportExcel, onExportPDF, onExportCharts }) => (
+        <div className="flex gap-2">
+            <button onClick={onExportExcel} className="flex items-center gap-1 rounded bg-green-600 px-3 py-2 text-sm hover:bg-green-700">
+                <Download className="h-4 w-4" />
+                Export Excel
+            </button>
+            <button onClick={onExportPDF} className="flex items-center gap-1 rounded bg-red-600 px-3 py-2 text-sm hover:bg-red-700">
+                <Download className="h-4 w-4" />
+                Export PDF
+            </button>
+            {onExportCharts && (
+                <button onClick={onExportCharts} className="flex items-center gap-1 rounded bg-blue-600 px-3 py-2 text-sm hover:bg-blue-700">
+                    <Download className="h-4 w-4" />
+                    Export Charts
+                </button>
+            )}
+        </div>
+    );
+
     const renderTimeChart = () => {
         let data, xKey, title;
 
@@ -159,6 +318,21 @@ const DashboardPage = () => {
             <div className="rounded-lg bg-gray-800 p-4 shadow">
                 <h3 className="mb-4 text-lg font-semibold">{title}</h3>
                 <div className="mb-2 flex justify-end">
+                    <ExportButtons
+                        onExportExcel={exportFishStatistics}
+                        onExportPDF={() =>
+                            exportToPDF(
+                                'Fish Statistics',
+                                [...stats.daily, ...stats.monthly, ...stats.yearly],
+                                [
+                                    { key: timeRange === 'daily' ? 'date' : timeRange === 'monthly' ? 'month' : 'year', label: 'Period' },
+                                    { key: 'count', label: 'Count' },
+                                ],
+                                'fish_statistics',
+                            )
+                        }
+                        onExportCharts={exportFishCharts}
+                    />
                     <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="rounded border bg-gray-700 px-2 py-1 text-sm">
                         <option value="daily">Daily</option>
                         <option value="monthly">Monthly</option>
@@ -584,6 +758,7 @@ const DashboardPage = () => {
             <main className="m-4 grid gap-4">
                 {/* Time-based chart (takes full width) */}
                 <div className="grid grid-cols-3 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <MainHeader title={'Fish Data'} />
                     <div className="col-span-3">{renderTimeChart()}</div>
                     {/* Gender ratio pie chart */}
                     <div className="col-span-1">
@@ -621,18 +796,24 @@ const DashboardPage = () => {
                     </div>
                 </div>
                 <div className="grid grid-cols-3 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <MainHeader title={'Disease Affliction Data'} />
+
                     <div className="col-span-3 row-span-1">{renderDiseaseTimeChart()}</div>
                     <div className="col-span-1">{renderDiseaseRatioChart()}</div>
                     <div className="col-span-1">{renderRecoveryStatusChart()}</div>
                     <div className="col-span-1">{renderDiseaseFrequencyChart()}</div>
                     <div className="col-span-3">{renderLongTermCases()}</div>
                 </div>
-                <div className="grid grid-rows-2 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                <div className="grid grid-rows-1 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <MainHeader title={'Fish Growth Data'} />
+
                     <div className="row-span-1">{renderInactiveFish()}</div>
                     <div className="row-span-1">{renderShrinkingFish()}</div>
                 </div>
 
                 <div className="grid grid-rows-1 gap-6 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
+                    <MainHeader title={'Medicine Usage Data'} />
+
                     {/* Medicine Usage - Full width */}
                     <div className="col-span-3">{renderMedicineUsageChart()}</div>
 
