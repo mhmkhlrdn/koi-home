@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 import { Download } from 'lucide-react';
 import { exportToExcel, exportToPDF, exportChartsToPDF } from '@/lib/utils';
 import MainHeader from '@/components/MainHeader';
+import DateRangePicker from '@/components/ui/DateRangePicker';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -15,6 +16,7 @@ const initialStats = {
     daily: [],
     monthly: [],
     yearly: [],
+    custom: [],
     total_fishes: 0,
     genderRatio: [],
     varietyRatio: [],
@@ -31,6 +33,10 @@ const initialDiseaseStats = {
 };
 
 const DashboardPage = () => {
+    const [dateRange, setDateRange] = useState({
+        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0], // Default: 30 days ago
+        end: new Date().toISOString().split('T')[0], // Default: today
+    });
     const [diseaseStats, setDiseaseStats] = useState(initialDiseaseStats);
     const [diseaseTimeRange, setDiseaseTimeRange] = useState('daily');
     const [selectedDisease, setSelectedDisease] = useState(null);
@@ -85,12 +91,20 @@ const DashboardPage = () => {
     useEffect(() => {
         const fetchAllData = async () => {
             try {
+                let params = {};
+                if (timeRange === 'custom') {
+                    params = {
+                        start_date: dateRange.start,
+                        end_date: dateRange.end,
+                    };
+                }
+
+                const fishResponse = await axios.get('/kh-admin/dashboard/fish-statistics', { params });
                 setLoading(true);
                 setError(null);
 
                 // Fetch both fish and disease data in parallel
-                const [fishResponse, diseaseResponse] = await Promise.all([
-                    axios.get('/kh-admin/dashboard/fish-statistics'),
+                const [diseaseResponse] = await Promise.all([
                     axios.get('/kh-admin/dashboard/disease-statistics'),
                     await fetchGrowthData(),
                     await fetchMedicineData(),
@@ -101,6 +115,7 @@ const DashboardPage = () => {
                     daily: formatDateData(fishResponse.data.daily, 'date'),
                     monthly: formatDateData(fishResponse.data.monthly, 'month'),
                     yearly: formatDateData(fishResponse.data.yearly, 'year'),
+                    custom: timeRange === 'custom' ? formatDateData(fishResponse.data.daily, 'date') : [],
                     total_fishes: fishResponse.data.total_fishes || 0,
                     genderRatio: fishResponse.data.gender_ratio || [],
                     varietyRatio: fishResponse.data.variety_ratio || [],
@@ -126,6 +141,31 @@ const DashboardPage = () => {
 
         fetchAllData();
     }, []);
+    const fetchFishData = async () => {
+        try {
+            let params = {};
+            if (timeRange === 'custom') {
+                params = {
+                    start_date: dateRange.start,
+                    end_date: dateRange.end,
+                };
+            }
+
+            const response = await axios.get('/kh-admin/dashboard/fish-statistics', { params });
+
+            setStats((prev) => ({
+                daily: formatDateData(response.data.daily, 'date'),
+                monthly: formatDateData(response.data.monthly, 'month'),
+                yearly: formatDateData(response.data.yearly, 'year'),
+                custom: timeRange === 'custom' ? formatDateData(response.data.custom || response.data.daily, 'date') : prev.custom,
+                total_fishes: response.data.total_fishes || 0,
+                genderRatio: response.data.gender_ratio || [],
+                varietyRatio: response.data.variety_ratio || [],
+            }));
+        } catch (err) {
+            console.error('Error fetching fish data:', err);
+        }
+    };
 
     // Update the exportFishStatistics function to flatten data
     const exportFishStatistics = () => {
@@ -144,6 +184,11 @@ const DashboardPage = () => {
             ...stats.yearly.map((item) => ({
                 'Data Type': 'Yearly',
                 Year: item.year,
+                'Fish Count': item.count,
+            })),
+            ...(stats.custom || []).map((item) => ({
+                'Data Type': 'Custom Range',
+                Date: item.date,
                 'Fish Count': item.count,
             })),
         ];
@@ -178,6 +223,49 @@ const DashboardPage = () => {
         ];
 
         exportToExcel(sheets, 'fish_statistics');
+    };
+
+    const exportFishPDFStatistics = () => {
+        let exportData = [];
+        let columns = [];
+        let sheetName = 'Fish Statistics';
+
+        switch (timeRange) {
+            case 'daily':
+                exportData = stats.daily;
+                columns = [
+                    { key: 'date', label: 'Date' },
+                    { key: 'count', label: 'Fish Count' },
+                ];
+                sheetName = 'Fish Statistics - Daily';
+                break;
+            case 'monthly':
+                exportData = stats.monthly;
+                columns = [
+                    { key: 'month', label: 'Month' },
+                    { key: 'count', label: 'Fish Count' },
+                ];
+                sheetName = 'Fish Statistics - Monthly';
+                break;
+            case 'yearly':
+                exportData = stats.yearly;
+                columns = [
+                    { key: 'year', label: 'Year' },
+                    { key: 'count', label: 'Fish Count' },
+                ];
+                sheetName = 'Fish Statistics - Yearly';
+                break;
+            case 'custom':
+                exportData = stats.custom;
+                columns = [
+                    { key: 'date', label: 'Date' },
+                    { key: 'count', label: 'Fish Count' },
+                ];
+                sheetName = `Fish Statistics - Custom (${dateRange.start} to ${dateRange.end})`;
+                break;
+        }
+
+        exportToPDF(sheetName, exportData, columns, 'fish_statistics');
     };
 
     const exportFishCharts = async () => {
@@ -301,6 +389,13 @@ const DashboardPage = () => {
                 xKey = 'year';
                 title = 'Fish Added/Born Yearly (Last 5 Years)';
                 break;
+            case 'custom':
+                data = stats.custom?.length ? stats.custom : stats.daily;
+                xKey = 'date';
+                title = stats.custom?.length
+                    ? `Fish Added/Born (${dateRange.start} to ${dateRange.end})`
+                    : 'Fish Added/Born Daily (Applying custom range...)';
+                break;
             default:
                 data = [];
         }
@@ -320,24 +415,47 @@ const DashboardPage = () => {
                 <div className="mb-2 flex justify-end">
                     <ExportButtons
                         onExportExcel={exportFishStatistics}
-                        onExportPDF={() =>
+                        onExportPDF={() => {
+                            const data =
+                                timeRange === 'daily'
+                                    ? stats.daily || []
+                                    : timeRange === 'monthly'
+                                      ? stats.monthly || []
+                                      : timeRange === 'yearly'
+                                        ? stats.yearly || []
+                                        : timeRange === 'custom'
+                                          ? stats.custom || []
+                                          : [];
+
+                            const periodKey =
+                                timeRange === 'daily' ? 'date' : timeRange === 'monthly' ? 'month' : timeRange === 'yearly' ? 'year' : 'date';
+
                             exportToPDF(
-                                'Fish Statistics',
-                                [...stats.daily, ...stats.monthly, ...stats.yearly],
+                                `Fish Statistics - ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}`,
+                                data,
                                 [
-                                    { key: timeRange === 'daily' ? 'date' : timeRange === 'monthly' ? 'month' : 'year', label: 'Period' },
+                                    { key: periodKey, label: 'Period' },
                                     { key: 'count', label: 'Count' },
                                 ],
-                                'fish_statistics',
-                            )
-                        }
+                                `fish_statistics_${timeRange}`,
+                            );
+                        }}
                         onExportCharts={exportFishCharts}
                     />
                     <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="rounded border bg-gray-700 px-2 py-1 text-sm">
                         <option value="daily">Daily</option>
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
+                        <option value="custom">Custom Range</option>
                     </select>
+                    {timeRange === 'custom' && (
+                        <div className="flex items-center gap-2">
+                            <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                            <button onClick={fetchFishData} className="rounded bg-blue-600 px-3 py-1 text-sm hover:bg-blue-700">
+                                Apply
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={data}>
@@ -392,6 +510,24 @@ const DashboardPage = () => {
                     {title}
                 </h3>
                 <div className="mb-2 flex justify-between">
+                    <ExportButtons
+                        onExportExcel={exportMedicineStatistics}
+                        onExportPDF={() =>
+                            exportToPDF(
+                                'Medicine Statistics',
+                                [...medicineStats.daily_usage, ...medicineStats.monthly_usage, ...medicineStats.yearly_usage],
+                                [
+                                    {
+                                        key: timeRange === 'daily_usage' ? 'date' : timeRange === 'monthly_usage' ? 'month' : 'yearly_usage',
+                                        label: 'Period',
+                                    },
+                                    { key: 'count', label: 'Count' },
+                                ],
+                                'medicine_statistics',
+                            )
+                        }
+                        onExportCharts={exportMedicineCharts}
+                    />
                     <select
                         value={medicineTimeRange}
                         onChange={(e) => setMedicineTimeRange(e.target.value)}

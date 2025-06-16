@@ -35,14 +35,27 @@ public function store(Request $request)
         'packaging' => 'required|integer|min:1',
         'measurement_id' => 'required|exists:measurements,id',
         'instruction' => 'nullable|string',
-        // 'image_url' => 'nullable|string', // remove this if not needed
+        'image' => 'nullable|image',
     ]);
     $validatedType = $request->validate([
         'type_id' => 'required|exists:types,id'
     ]);
     $validated['totalLeft'] = $validated['amount'] * $validated['packaging'];
 
-    $medicineId = Medicine::insertGetId($validated);
+    $imagePath = null;
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('medicine_images', 'public');
+    }
+
+    $medicineId = Medicine::insertGetId([
+        'name' => $validated["name"],
+        'amount' => $validated["amount"],
+        'packaging' => $validated["packaging"],
+        'totalLeft' => $validated["totalLeft"],
+        'measurement_id' => $validated["measurement_id"],
+        'instruction' => $validated["instruction"],
+        'image_url' => $imagePath,
+    ]);
     MedicineType::insert(
         [
             'medicine_id' => $medicineId,

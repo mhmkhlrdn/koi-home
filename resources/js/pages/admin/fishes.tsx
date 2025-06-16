@@ -273,7 +273,7 @@ const Fishes = () => {
                         href={`/kh-admin/diagnosis/create?fish_id=${selectedFish?.id}`}
                     />
                     <ButtonLink classNames="flex-1" variant="primary" label="Breed" />
-                    <ButtonLink classNames="flex-1" variant="primary" label="Sell" />
+                    <ButtonLink classNames="flex-1" href={`/kh-admin/fishes/sell?fish_id=${selectedFish?.id}`} variant="primary" label="Sell" />
                     <ButtonLink classNames="flex-1" href={`/kh-admin/fishes/measure?fish_id=${selectedFish?.id}`} variant="primary" label="Measure" />
                 </div>
             </Modal>

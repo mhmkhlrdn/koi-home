@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { useForm, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import MedicineImageUpload from './../../components/MedicineImageUpload';
 
 const medicines = () => {
     const { medicinesInStock, medicinesOutOfStock, medicineType, measurements, types }: any = usePage().props;
@@ -30,20 +31,29 @@ const medicines = () => {
         packaging: 0,
         instruction: '',
         type_id: 0,
-        image_url: '',
+        image: null,
     });
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('medicine.store'));
         manageModal('modalCreate');
     };
+
+    const handleImage = (data) => {
+        setData('image', data);
+    };
     return (
         <AdminLayout>
-            <main className="grid grid-cols-5 gap-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4">
-                <MainHeader variant="primary" title="Medicines In Stock" onClickCreate={() => manageModal('modalCreate')} styleClass="col-span-5" />
+            <main className="grid grid-cols-3 gap-4 rounded-2xl border-b-6 border-gray-900 bg-gray-700 px-6 py-4 2xl:grid-cols-5">
+                <MainHeader
+                    variant="primary"
+                    title="Medicines In Stock"
+                    onClickCreate={() => manageModal('modalCreate')}
+                    styleClass="col-span-3 2xl:col-span-5"
+                />
                 {medicinesInStock.map((stocked: any) => (
                     <div className="align-center justify-center rounded-lg bg-gray-900 p-4">
-                        <img className="mx-auto max-w-48 rounded-lg" src={`/images/${stocked.id}.jpeg`} alt="" />
+                        <img className="mx-auto max-w-48 rounded-lg" src={`/${stocked.image_url}`} alt="" />
                         <div className="mt-2 text-center">
                             <h1 className="rounded-md bg-gray-800 p-2" key={stocked.id}>
                                 {stocked.name}
@@ -63,13 +73,16 @@ const medicines = () => {
                             </label>
                             <label>
                                 Type:{' '}
-                                {
-                                    medicineType
-                                        .filter((t: any) => t.medicine_id === stocked.id) // Filter types that match the stocked medicine
-                                        .map((t: any) => t.type.type) // Extract the type name
-                                        .join(', ') || 'No Type' // Join if multiple types exist, otherwise "No Type"
-                                }
+                                {medicineType
+                                    .filter((t: any) => t.medicine_id === stocked.id)
+                                    .map((t: any) => t.type.type)
+                                    .join(', ') || 'No Type'}
                             </label>
+                        </div>
+                        <div className="align-self-end flex justify-center">
+                            <button type="button" className="m-2 rounded-md bg-gray-600 px-4 py-2 font-semibold hover:bg-gray-500">
+                                Update Stock
+                            </button>
                         </div>
                     </div>
                 ))}
@@ -106,16 +119,6 @@ const medicines = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-md font-bold text-white">Packaging</label>
-                                    <input
-                                        type="number"
-                                        value={data.packaging}
-                                        onChange={(e) => setData('packaging', parseInt(e.target.value))}
-                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
-                                    />
-                                </div>
-
-                                <div>
                                     <label className="text-md font-bold text-white">Measurement</label>
                                     <select
                                         value={data.measurement_id}
@@ -130,6 +133,17 @@ const medicines = () => {
                                         ))}
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label className="text-md font-bold text-white">Packaging</label>
+                                    <input
+                                        type="number"
+                                        value={data.packaging}
+                                        onChange={(e) => setData('packaging', parseInt(e.target.value))}
+                                        className="w-full rounded-lg bg-gray-800 p-2 text-white"
+                                    />
+                                </div>
+
                                 <div>
                                     <label className="text-md font-bold text-white">Type</label>
                                     <select
@@ -153,6 +167,9 @@ const medicines = () => {
                                         onChange={(e) => setData('instruction', e.target.value)}
                                         className="w-full rounded-lg bg-gray-800 p-2 text-white"
                                     />
+                                </div>
+                                <div>
+                                    <MedicineImageUpload Img={handleImage} />
                                 </div>
 
                                 <div className="flex justify-end">

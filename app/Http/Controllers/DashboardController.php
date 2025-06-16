@@ -103,7 +103,6 @@ class DashboardController extends Controller
 
     public function fishGrowthStatistics()
 {
-    // Fish without recent measurements (older than 30 days)
     $inactiveFish = Fish::whereDoesntHave('growthRecords', function($query) {
         $query->where('recorded_at', '>=', now()->subDays(30));
     })
@@ -120,7 +119,6 @@ class DashboardController extends Controller
         ];
     });
 
-    // Improved query for shrinking fish
     $shrinkingFish = Fish::whereHas('growthRecords', function($query) {
             $query->groupBy('fish_id')
                 ->havingRaw('COUNT(*) > 1');
@@ -170,69 +168,101 @@ class DashboardController extends Controller
 }
 
 
+public function fishStatistics(Request $request)
+{
+    // Initialize base query
+    $query = Fish::query();
 
+    // Handle custom date range if provided
+    if ($request->has('start_date') && $request->has('end_date')) {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-
-public function fishStatistics()
-    {
-        // Fishes added/born per day/month/year
-        $daily = Fish::select(
+        $custom = Fish::select(
                 DB::raw('DATE(birthDate) as date'),
                 DB::raw('COUNT(*) as count')
             )
+            ->whereBetween('birthDate', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date', 'desc')
-            ->limit(30)
             ->get();
+    }
 
-        $monthly = Fish::select(
-                DB::raw('DATE_FORMAT(birthDate, "%Y-%m") as month'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->limit(12)
-            ->get();
+    // Daily stats (default to last 30 days if no custom range)
+    $daily = Fish::select(
+            DB::raw('DATE(birthDate) as date'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->when(!$request->has('start_date'), function($q) {
+            return $q->limit(30);
+        })
+        ->groupBy('date')
+        ->orderBy('date', 'desc')
+        ->get();
 
-        $yearly = Fish::select(
-                DB::raw('YEAR(birthDate) as year'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('year')
-            ->orderBy('year', 'desc')
-            ->limit(5)
-            ->get();
+    // Monthly stats
+    $monthly = Fish::select(
+            DB::raw('DATE_FORMAT(birthDate, "%Y-%m") as month'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('month')
+        ->orderBy('month', 'desc')
+        ->limit(12)
+        ->get();
 
-        // Gender ratio
-        $genderRatio = Fish::select(
-                'gender',
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('gender')
-            ->get();
+    // Yearly stats
+    $yearly = Fish::select(
+            DB::raw('YEAR(birthDate) as year'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('year')
+        ->orderBy('year', 'desc')
+        ->limit(5)
+        ->get();
 
-        // Variety ratio
-        $varietyRatio = Fish::with('variety')
-            ->select(
-                'variety_id',
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('variety_id')
-            ->get()
-            ->map(function($item) {
-                return [
-                    'variety_name' => $item->variety->name,
-                    'count' => $item->count
-                ];
-            });
+    // Gender ratio
+    $genderRatio = Fish::select(
+            'gender',
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('gender')
+        ->get();
+
+    // Variety ratio
+    $varietyRatio = Fish::with('variety')
+        ->select(
+            'variety_id',
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('variety_id')
+        ->get()
+        ->map(function($item) {
+            return [
+                'variety_name' => $item->variety->name,
+                'count' => $item->count
+            ];
+        });
+
+    return response()->json([
+        'daily' => $daily,
+        'monthly' => $monthly,
+        'yearly' => $yearly,
+        'gender_ratio' => $genderRatio,
+        'total_fishes' => Fish::count(), // More efficient than all()->count()
+        'variety_ratio' => $varietyRatio,
+        'custom' => $request->has('start_date') ? $custom : [],
+    ]);
+}
+public function customFishRange(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required',
+            'end_date' => 'required',
+        ]);
+$query = Fish::select('birthDate')->whereBetween('birthDate', [$validated['start_date'], $validated['end_date']])->get()->count();
 
         return response()->json([
-            'daily' => $daily,
-            'monthly' => $monthly,
-            'yearly' => $yearly,
-            'gender_ratio' => $genderRatio,
-            'total_fishes' => Fish::all()->count(),
-            'variety_ratio' => $varietyRatio,
+            'data' => $query,
         ]);
     }
 

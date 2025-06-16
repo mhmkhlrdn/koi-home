@@ -15,7 +15,9 @@ class SickController extends Controller
 {
     public function index_treated(Request $request){
         $treatedFishesPage = $request->query('treatedFishesPage', 1);
-        $treatedFishes = FishTreatment::with(['fishDisease.fish', 'treatment.medicine.measurement', 'user', 'schedule'])
+        $treatedFishes = FishTreatment::with(['fishDisease.fish', 'treatment.medicine.measurement', 'user', 'schedule']) ->whereHas('fishDisease', function ($query) {
+        $query->whereNotNull('recovery_date');
+    })
         ->paginate(10, ['*'], 'treatedFishesPage');
         return Inertia::render('admin/fish/UnderTreatment', [
             'treatedFishes' => $treatedFishes,

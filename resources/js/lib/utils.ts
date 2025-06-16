@@ -2,14 +2,13 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
 // Export to Excel
 // Example implementation of exportToExcel
 export const exportToExcel = (sheets, fileName) => {
     try {
-        const XLSX = require('xlsx');
         const wb = XLSX.utils.book_new();
 
         sheets.forEach(({ name, data }) => {
@@ -27,13 +26,13 @@ export const exportToExcel = (sheets, fileName) => {
 // Example implementation of exportToPDF
 export const exportToPDF = (title, data, columns, fileName) => {
     try {
-        const { jsPDF } = require('jspdf');
-        const autoTable = require('jspdf-autotable');
-
         const doc = new jsPDF();
         doc.text(title, 14, 16);
 
-        const tableData = data.map((row) => columns.map((col) => row[col.key] || ''));
+        // Filter out empty rows and map to column values
+        const tableData = data
+            .filter((row) => columns.some((col) => row[col.key] !== undefined))
+            .map((row) => columns.map((col) => row[col.key] || ''));
 
         autoTable(doc, {
             head: [columns.map((col) => col.label)],
@@ -57,7 +56,6 @@ export const exportToPDF = (title, data, columns, fileName) => {
 // Export charts as images to PDF
 export const exportChartsToPDF = async (chartIds, fileName) => {
     try {
-        const { jsPDF } = require('jspdf');
         const doc = new jsPDF();
 
         for (let i = 0; i < chartIds.length; i++) {

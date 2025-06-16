@@ -11,18 +11,7 @@ class Customer extends Authenticatable
 {
     use HasFactory;
 
-    protected $fillable = ['first_name', 'last_name', 'email', 'email_verified_at', 'password', 'phone', 'address_id'];
-
-    protected $hidden = [
-        'password'
-    ];
-
-    protected function casts(): array {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed'
-        ];
-    }
+    protected $fillable = ['first_name', 'last_name', 'email',  'phone', 'address_id'];
 
     protected $guard = 'customer';
 

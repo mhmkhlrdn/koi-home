@@ -5,6 +5,7 @@ use App\Http\Controllers\CountryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DiseaseController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\FishController;
 use App\Http\Controllers\InformationController;
 use App\Http\Controllers\SizeController;
@@ -54,6 +55,9 @@ Route::middleware('guest')->group(function () {
 Route::put('/kh-admin/fishes/{id}', [FishController::class, 'update'])->name('fishes.update');
 Route::middleware('auth')->group(function () {
     Route::prefix('kh-admin')->group(function (){
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customer.index');
+        Route::get('/customers/create', [CustomerController::class, 'create'])->name('customer.create');
+        Route::post('/customers/store', [CustomerController::class, 'store'])->name('customer.store');
         Route::get('/fish/{id}', [FishController::class, 'show'])->name('fish.show');
         Route::patch('/information', [InformationController::class, 'update'])->name('info.update');
         Route::get('/information', [InformationController::class, 'index'])->name('information');
@@ -71,6 +75,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/treatment/store', [TreatmentController::class, 'store'])->name('treatment.store');
         Route::get('/fishes', [FishController::class, 'index'])->name('fishes');
         Route::get('/dashboard/fish-statistics', [DashboardController::class, 'fishStatistics']);
+        Route::post('/dashboard/fish-statistics-custom', [DashboardController::class, 'customFishRange']);
         Route::get('/dashboard/disease-statistics', [DashboardController::class, 'diseaseStatistics']);
         Route::get('/dashboard/growth-statistics', [DashboardController::class, 'fishGrowthStatistics']);
         Route::get('/dashboard/medicine-usage', [DashboardController::class, 'medicineUsageStatistics']);
@@ -81,6 +86,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/cetak-pdf', [FishController::class, 'cetak'])->name('fishes.cetak');
             Route::get('/create', [FishController::class, 'create'])->name('fishes.create');
             Route::get('/measure', [FishController::class, 'measure'])->name('fishes.measure');
+            Route::get('/sell', [FishController::class, 'sell'])->name('fishes.sell');
             Route::post('/measure/store', [FishController::class, 'storeMeasure'])->name('measurement.store');
             Route::post('/store', [FishController::class, 'store'])->name('fishes.store');
             Route::get('/variety', [VarietyController::class, 'index'])->name('variety');

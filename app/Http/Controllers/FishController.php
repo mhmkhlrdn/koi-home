@@ -10,6 +10,7 @@ use App\Models\Fish;
 use App\Models\FishGrowth;
 use App\Models\Pool;
 use App\Models\Variety;
+use App\Models\Customer;
 use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -97,6 +98,34 @@ public function measure(Request $request){
         'fish' => Fish::with('growthRecords', 'variety', 'bloodline', 'pool')->find($fishId)
     ]);
 }
+public function sell(Request $request)
+{
+    $fishIds = $request->query('fish_id', []);
+
+    if (empty($fishIds)) {
+        return redirect()->route('dashboard')->withErrors(['error' => 'No fish selected for selling.']);
+    }
+
+    // Ensure $fishIds is always an array
+    $fishIds = is_array($fishIds) ? $fishIds : [$fishIds];
+
+    $selectedFishes = Fish::with(['latestSize', 'variety', 'bloodline', 'pool'])
+        ->whereIn('id', $fishIds)
+        ->get();
+
+    $allFishes = Fish::with(['variety', 'bloodline'])
+        ->whereNotIn('id', $fishIds) // Optionally exclude already selected
+        ->get();
+
+        $customers = Customer::with('address')->get();
+
+    return Inertia::render('admin/sell/create', [
+        'selectedFishes' => $selectedFishes,
+        'allFishes' => $allFishes,
+        'customers' => $customers
+    ]);
+}
+
 
     public function exportExcel() {
         return Excel::download(new FishesExport, 'fishes.xlsx');

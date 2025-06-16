@@ -9,12 +9,8 @@ class Address extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['address_line_one', 'address_line_two', 'city', 'province', 'postal_code', 'country_id'];
+    protected $fillable = ['address_line_one', 'address_line_two', 'city', 'province', 'postal_code', 'country'];
 
-    public function country()
-    {
-        return $this->belongsTo(Country::class);
-    }
 
     public function customers()
     {
